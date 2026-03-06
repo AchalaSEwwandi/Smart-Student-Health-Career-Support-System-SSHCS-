@@ -1,0 +1,20 @@
+{
+  "name": "sshcs-frontend",
+  "version": "1.0.0",
+  "description": "Frontend for Smart Student Health & Career Support System",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "axios": "^1.5.0"
+  },
+  "devDependencies": {
+    "vite": "^4.4.5",
+    "@vitejs/plugin-react": "^4.0.3"
+  }
+}
