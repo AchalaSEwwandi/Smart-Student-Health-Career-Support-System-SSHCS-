@@ -8,18 +8,18 @@ import CTASection from './components/CTASection'
 import Footer from './components/Footer'
 
 function App() {
-  return (
-    <div className="min-h-screen bg-white">
-      <Navbar />
-      <HeroSection />
-      <ServicesSection />
-      <GrocerySection />
-      <FeaturesSection />
-      <HowItWorksSection />
-      <CTASection />
-      <Footer />
-    </div>
-  )
+    return (
+        <div className="min-h-screen bg-white">
+            <Navbar />
+            <HeroSection />
+            <ServicesSection />
+            <GrocerySection />
+            <FeaturesSection />
+            <HowItWorksSection />
+            <CTASection />
+            <Footer />
+        </div>
+    )
 }
 
 export default App
