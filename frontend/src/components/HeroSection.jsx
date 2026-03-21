@@ -57,7 +57,7 @@ export default function HeroSection() {
             </div>
 
             {/* Stats */}
-            <div className="mt-10 flex flex-wrap gap-8 justify-center lg:justify-start">
+            <div className="mt-10 pb-16 relative z-10 flex flex-wrap gap-8 justify-center lg:justify-start">
               {[
                 { value: '10K+', label: 'Students' },
                 { value: '500+', label: 'Doctors' },
@@ -65,7 +65,7 @@ export default function HeroSection() {
               ].map((stat) => (
                 <div key={stat.label} className="text-center">
                   <p className="text-2xl font-bold text-white">{stat.value}</p>
-                  <p className="text-sm text-blue-200">{stat.label}</p>
+                  <p className="text-sm text-white/80">{stat.label}</p>
                 </div>
               ))}
             </div>
