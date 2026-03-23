@@ -1,15 +1,15 @@
-// Database configuration
 const mongoose = require('mongoose');
 
+/**
+ * Connect to MongoDB Atlas using the URI from environment variables.
+ * Logs success or exits process on failure.
+ */
 const connectDB = async () => {
   try {
-    await mongoose.connect(process.env.MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-    console.log('MongoDB connected');
+    const conn = await mongoose.connect(process.env.MONGO_URI);
+    console.log(`MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
-    console.error('MongoDB connection error:', error);
+    console.error(`MongoDB Connection Error: ${error.message}`);
     process.exit(1);
   }
 };
