@@ -1,17 +1,17 @@
-// Database configuration
 const mongoose = require('mongoose');
 
 const connectDB = async () => {
-  try {
-    await mongoose.connect(process.env.MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-    console.log('MongoDB connected');
-  } catch (error) {
-    console.error('MongoDB connection error:', error);
-    process.exit(1);
-  }
+  const tryConnect = async () => {
+    try {
+      const conn = await mongoose.connect(process.env.MONGO_URI);
+      console.log(`MongoDB Connected: ${conn.connection.host}`);
+    } catch (error) {
+      console.error(`MongoDB Connection Error: ${error.message}`);
+      console.log('Retrying MongoDB connection in 5 seconds...');
+      setTimeout(tryConnect, 5000);
+    }
+  };
+  await tryConnect();
 };
 
 module.exports = connectDB;
