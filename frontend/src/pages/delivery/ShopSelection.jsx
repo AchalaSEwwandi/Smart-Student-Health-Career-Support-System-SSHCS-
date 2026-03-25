@@ -14,7 +14,36 @@ const shopEmoji = (name) => {
   return '🏬';
 };
 
-const STEPS = ['Shop', 'Products', 'Cart', 'Payment'];
+const STEPS = [
+  { label: 'Shop', icon: '🏪' },
+  { label: 'Products', icon: '📦' },
+  { label: 'Cart', icon: '🛒' },
+  { label: 'Payment', icon: '💳' },
+];
+
+/* ─── shared token styles ─── */
+const BG   = '#081225';
+const CARD = '#14233c';
+const BORDER = '#28476b';
+const PRIMARY = '#3b82f6';
+const GLOW = 'rgba(59,130,246,0.18)';
+const TEXT  = '#f8fafc';
+const MUTED = '#94a3b8';
+
+const navStyle = {
+  background: 'rgba(8,18,37,0.92)',
+  borderBottom: `1px solid ${BORDER}`,
+  backdropFilter: 'blur(12px)',
+  WebkitBackdropFilter: 'blur(12px)',
+};
+
+const cardBase = {
+  background: CARD,
+  border: `1px solid ${BORDER}`,
+  boxShadow: `0 4px 24px rgba(0,0,0,0.4), 0 0 0 0 ${GLOW}`,
+  borderRadius: '1rem',
+  transition: 'all 0.25s ease',
+};
 
 export default function ShopSelection() {
   const navigate = useNavigate();
@@ -36,67 +65,76 @@ export default function ShopSelection() {
     setError('');
     setTimeout(() => {
       navigate(`/delivery/products/${shop._id}`, { state: { shopName: shop.name } });
-    }, 150);
+    }, 160);
   };
 
   return (
-    <div className="min-h-screen" style={{ background: '#0F172A' }}>
+    <div style={{ minHeight: '100vh', background: BG, fontFamily: "'Inter', system-ui, sans-serif" }}>
+
+      {/* Global keyframes */}
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        .shop-card:hover { transform: translateY(-3px) scale(1.01); box-shadow: 0 12px 40px rgba(0,0,0,0.5), 0 0 0 1px ${PRIMARY}, 0 0 24px ${GLOW} !important; border-color: ${PRIMARY} !important; }
+        .shop-card.selected { border-color: ${PRIMARY} !important; box-shadow: 0 0 0 2px ${PRIMARY}, 0 0 32px ${GLOW} !important; }
+        .btn-primary:hover { background: linear-gradient(135deg,#2563eb,#1d4ed8) !important; transform: translateY(-2px); box-shadow: 0 8px 28px rgba(59,130,246,0.5) !important; }
+        .back-btn:hover { color: ${TEXT} !important; }
+        .step-pulse { animation: stepPulse 2s ease-in-out infinite; }
+        @keyframes stepPulse { 0%,100%{box-shadow:0 0 12px rgba(59,130,246,0.4);} 50%{box-shadow:0 0 24px rgba(59,130,246,0.8);} }
+        @keyframes fadeUp { from{opacity:0;transform:translateY(16px);} to{opacity:1;transform:translateY(0);} }
+        .fade-up { animation: fadeUp 0.5s ease both; }
+      `}</style>
 
       {/* Navbar */}
-      <nav style={{ background: '#1E293B', borderBottom: '1px solid rgba(96,165,250,0.15)' }} className="sticky top-0 z-50">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <nav style={{ ...navStyle, position: 'sticky', top: 0, zIndex: 50 }}>
+        <div style={{ maxWidth: '52rem', margin: '0 auto', padding: '0 1.5rem', height: '4rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <button
+            className="back-btn"
             onClick={() => navigate('/delivery')}
-            className="flex items-center gap-1.5 text-sm font-medium transition-colors duration-200"
-            style={{ color: '#60A5FA' }}
-            onMouseEnter={e => e.currentTarget.style.color = '#F8FAFC'}
-            onMouseLeave={e => e.currentTarget.style.color = '#60A5FA'}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.875rem', fontWeight: 500, color: PRIMARY, background: 'none', border: 'none', cursor: 'pointer', transition: 'color 0.2s' }}
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-            </svg>
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
             Dashboard
           </button>
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: '#2563EB' }}>
-              <span className="text-sm">🚚</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+            <div style={{ width: '2rem', height: '2rem', borderRadius: '0.5rem', background: `linear-gradient(135deg, ${PRIMARY}, #1d4ed8)`, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 4px 12px ${GLOW}` }}>
+              <span style={{ fontSize: '0.9rem' }}>🚚</span>
             </div>
-            <span className="font-bold text-sm" style={{ color: '#F8FAFC' }}>SSHCS Delivery</span>
+            <span style={{ fontWeight: 700, fontSize: '0.9rem', color: TEXT }}>SSHCS Delivery</span>
           </div>
         </div>
       </nav>
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <div style={{ maxWidth: '52rem', margin: '0 auto', padding: '2.5rem 1.5rem' }}>
+
         {/* Header */}
-        <div className="text-center mb-8">
-          <div
-            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-4"
-            style={{ background: 'rgba(37,99,235,0.15)', border: '1px solid rgba(37,99,235,0.3)' }}
-          >
-            <span className="text-xs font-semibold" style={{ color: '#60A5FA' }}>Step 1 of 4</span>
+        <div className="fade-up" style={{ textAlign: 'center', marginBottom: '2rem' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.375rem 1rem', borderRadius: '999px', background: 'rgba(59,130,246,0.12)', border: `1px solid rgba(59,130,246,0.3)`, marginBottom: '1rem' }}>
+            <span style={{ width: '0.5rem', height: '0.5rem', borderRadius: '50%', background: PRIMARY, display: 'inline-block' }} />
+            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: PRIMARY }}>Step 1 of 4</span>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-extrabold mb-2" style={{ color: '#F8FAFC' }}>Select a Shop</h1>
-          <p className="text-sm" style={{ color: '#CBD5E1' }}>Choose from available campus shops to start your order</p>
+          <h1 style={{ fontSize: 'clamp(1.75rem,4vw,2.5rem)', fontWeight: 800, color: TEXT, margin: '0 0 0.5rem' }}>Select a Shop</h1>
+          <p style={{ fontSize: '0.9rem', color: MUTED, margin: 0 }}>Choose from available campus shops to start your order</p>
         </div>
 
-        {/* Progress */}
-        <div className="flex items-center justify-center gap-1 mb-8">
-          {STEPS.map((s, i) => (
-            <div key={s} className="flex items-center gap-1">
-              <span
-                className="text-xs px-3 py-1 rounded-full font-semibold"
-                style={
-                  i === 0
-                    ? { background: '#2563EB', color: '#F8FAFC', boxShadow: '0 0 12px rgba(37,99,235,0.5)' }
-                    : { background: 'rgba(255,255,255,0.06)', color: '#64748B', border: '1px solid rgba(255,255,255,0.08)' }
-                }
+        {/* Step Progress */}
+        <div className="fade-up" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0, marginBottom: '2.5rem' }}>
+          {STEPS.map((step, i) => (
+            <div key={step.label} style={{ display: 'flex', alignItems: 'center' }}>
+              <div
+                className={i === 0 ? 'step-pulse' : ''}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '0.375rem',
+                  padding: '0.375rem 0.875rem', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 600,
+                  ...(i === 0
+                    ? { background: PRIMARY, color: '#fff' }
+                    : { background: 'rgba(255,255,255,0.05)', color: '#475569', border: `1px solid rgba(255,255,255,0.08)` }),
+                }}
               >
-                {i + 1}. {s}
-              </span>
+                <span>{step.icon}</span>
+                <span>{step.label}</span>
+              </div>
               {i < STEPS.length - 1 && (
-                <svg className="w-4 h-4" style={{ color: i < 0 ? '#60A5FA' : '#334155' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                </svg>
+                <div style={{ width: '2rem', height: '2px', background: i < 0 ? PRIMARY : 'rgba(255,255,255,0.08)', margin: '0 0.125rem' }} />
               )}
             </div>
           ))}
@@ -104,63 +142,76 @@ export default function ShopSelection() {
 
         {/* Error */}
         {error && (
-          <div className="mb-5 p-4 rounded-xl flex items-center gap-2 text-sm"
-            style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#FCA5A5' }}>
-            <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-            </svg>
+          <div style={{ marginBottom: '1.25rem', padding: '0.875rem 1rem', borderRadius: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.625rem', fontSize: '0.875rem', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#fca5a5' }}>
+            <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
             {error}
           </div>
         )}
 
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-24 gap-4">
-            <div className="w-12 h-12 border-4 rounded-full animate-spin" style={{ borderColor: 'rgba(96,165,250,0.3)', borderTopColor: '#60A5FA' }} />
-            <p className="text-sm" style={{ color: '#64748B' }}>Loading shops...</p>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '6rem 0', gap: '1rem' }}>
+            <div style={{ width: '3rem', height: '3rem', border: `4px solid rgba(59,130,246,0.2)`, borderTopColor: PRIMARY, borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+            <style>{`@keyframes spin{to{transform:rotate(360deg);}}`}</style>
+            <p style={{ fontSize: '0.875rem', color: MUTED }}>Loading shops...</p>
           </div>
         ) : (
-          <div className="grid gap-4">
-            {shops.map((shop) => (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {shops.map((shop, idx) => (
               <div
                 key={shop._id}
                 id={`shop-${shop.name?.toLowerCase().replace(/\s+/g, '-')}`}
-                className="group flex items-center gap-5 p-6 rounded-2xl cursor-pointer transition-all duration-200 hover:-translate-y-0.5"
+                className={`shop-card fade-up ${selected === shop._id ? 'selected' : ''}`}
                 style={{
-                  background: selected === shop._id ? 'rgba(37,99,235,0.15)' : '#1E293B',
-                  border: selected === shop._id ? '1px solid rgba(37,99,235,0.6)' : '1px solid rgba(96,165,250,0.1)',
-                  boxShadow: selected === shop._id ? '0 0 24px rgba(37,99,235,0.25)' : '0 4px 16px rgba(0,0,0,0.3)',
+                  ...cardBase,
+                  display: 'flex', alignItems: 'center', gap: '1.25rem', padding: '1.5rem',
+                  cursor: 'pointer', animationDelay: `${idx * 0.08}s`,
+                  ...(selected === shop._id
+                    ? { background: 'rgba(59,130,246,0.1)', borderColor: PRIMARY, boxShadow: `0 0 0 2px ${PRIMARY}, 0 0 32px ${GLOW}` }
+                    : {}),
                 }}
                 onClick={() => handleShopClick(shop)}
-                onMouseEnter={e => { if (selected !== shop._id) { e.currentTarget.style.borderColor = 'rgba(96,165,250,0.3)'; e.currentTarget.style.boxShadow = '0 4px 24px rgba(37,99,235,0.2)'; } }}
-                onMouseLeave={e => { if (selected !== shop._id) { e.currentTarget.style.borderColor = 'rgba(96,165,250,0.1)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.3)'; } }}
               >
-                <div
-                  className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl shrink-0 transition-transform duration-200 group-hover:scale-105"
-                  style={{ background: 'rgba(37,99,235,0.12)', border: '1px solid rgba(96,165,250,0.2)' }}
-                >
+                {/* Icon */}
+                <div style={{ width: '4.5rem', height: '4.5rem', borderRadius: '1rem', background: selected === shop._id ? 'rgba(59,130,246,0.2)' : 'rgba(59,130,246,0.08)', border: `1px solid rgba(59,130,246,0.2)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', flexShrink: 0 }}>
                   {shopEmoji(shop.name)}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h2 className="font-bold text-xl mb-1" style={{ color: '#F8FAFC' }}>{shop.name}</h2>
-                  <p className="text-sm mb-2 leading-relaxed" style={{ color: '#CBD5E1' }}>{shop.description}</p>
-                  <div className="flex items-center gap-1 text-xs" style={{ color: '#60A5FA' }}>
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
+
+                {/* Info */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                    <h2 style={{ fontWeight: 700, fontSize: '1.1rem', color: TEXT, margin: 0 }}>{shop.name}</h2>
+                    {selected === shop._id && (
+                      <span style={{ fontSize: '0.65rem', fontWeight: 700, padding: '0.2rem 0.6rem', borderRadius: '999px', background: PRIMARY, color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Selected</span>
+                    )}
+                  </div>
+                  <p style={{ fontSize: '0.85rem', color: '#cbd5e1', margin: '0 0 0.5rem', lineHeight: 1.5 }}>{shop.description}</p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.75rem', color: PRIMARY }}>
+                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                     {shop.location}
                   </div>
                 </div>
-                <div
-                  className="w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200"
-                  style={{ background: selected === shop._id ? '#2563EB' : 'rgba(96,165,250,0.1)' }}
-                >
-                  <svg className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" style={{ color: selected === shop._id ? '#fff' : '#60A5FA' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                  </svg>
+
+                {/* Arrow */}
+                <div style={{ width: '2.25rem', height: '2.25rem', borderRadius: '50%', background: selected === shop._id ? PRIMARY : 'rgba(59,130,246,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.25s' }}>
+                  <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke={selected === shop._id ? '#fff' : PRIMARY} strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
                 </div>
               </div>
             ))}
+
+            {/* Continue CTA */}
+            {selected && (
+              <button
+                className="btn-primary fade-up"
+                onClick={() => {
+                  const shop = shops.find((s) => s._id === selected);
+                  if (shop) navigate(`/delivery/products/${shop._id}`, { state: { shopName: shop.name } });
+                }}
+                style={{ marginTop: '0.5rem', width: '100%', padding: '1rem', borderRadius: '0.875rem', background: `linear-gradient(135deg, ${PRIMARY}, #1d4ed8)`, color: '#fff', fontWeight: 700, fontSize: '1rem', border: 'none', cursor: 'pointer', boxShadow: `0 4px 24px rgba(59,130,246,0.45)`, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', transition: 'all 0.25s' }}
+              >
+                Continue to Products
+                <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
+              </button>
+            )}
           </div>
         )}
       </div>
