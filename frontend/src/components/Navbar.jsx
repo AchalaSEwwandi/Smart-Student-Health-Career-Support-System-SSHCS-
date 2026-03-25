@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, Fragment } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
 
@@ -48,16 +48,32 @@ const Navbar = () => {
 
           {/* Desktop Links */}
           <div className="hidden md:flex items-center gap-6">
-            {!isAuthenticated ? (
+            {(!isAuthenticated || role === 'student') ? (
               <>
                 {NAV_LINKS.map(({ to, label }) => (
-                  <Link
-                    key={label}
-                    to={to}
-                    className="text-white/80 hover:text-white text-sm font-medium transition"
-                  >
-                    {label}
-                  </Link>
+                  <Fragment key={label}>
+                    <Link
+                      to={to}
+                      className="text-white/80 hover:text-white text-sm font-medium transition"
+                    >
+                      {label}
+                    </Link>
+                    {/* Inject Dropdown after AI Assistant for authenticated students */}
+                    {label === 'AI Assistant' && isAuthenticated && role === 'student' && (
+                      <div className="relative group">
+                        <button className="text-white/80 hover:text-white text-sm font-medium transition flex items-center gap-1 focus:outline-none focus:ring-0 cursor-pointer pb-2 -mb-2">
+                          My Dashboard <span className="text-[10px]">▼</span>
+                        </button>
+                        <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
+                          <div className="bg-white rounded-xl shadow-xl w-48 py-2 border border-gray-100 flex flex-col items-center">
+                            <Link to="/student/dashboard" className="w-full text-center px-4 py-2 text-sm text-gray-700 hover:bg-h-50 hover:text-blue-600 transition">Dashboard</Link>
+                            <Link to="/student/complaints" className="w-full text-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-blue-600 transition">Complaints</Link>
+                            <Link to="/student/top-rated" className="w-full text-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-blue-600 transition">Top Rated</Link>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </Fragment>
                 ))}
               </>
             ) : (
@@ -65,13 +81,6 @@ const Navbar = () => {
                 <Link to={dashboardPath} className="text-white/80 hover:text-white text-sm">
                   Dashboard
                 </Link>
-
-                {role === 'student' && (
-                  <>
-                    <Link to="/student/top-rated" className="text-white/80 hover:text-white text-sm">Top Rated</Link>
-                    <Link to="/student/complaints" className="text-white/80 hover:text-white text-sm">Complaints</Link>
-                  </>
-                )}
 
                 {role === 'admin' && (
                   <>
@@ -145,33 +154,51 @@ const Navbar = () => {
         {/* Mobile Menu */}
         {mobileOpen && (
           <div className="md:hidden py-4 space-y-2">
-            {!isAuthenticated ? (
+            {(!isAuthenticated || role === 'student') ? (
               <>
                 {NAV_LINKS.map(({ to, label }) => (
-                  <Link
-                    key={label}
-                    to={to}
-                    onClick={() => setMobileOpen(false)}
-                    className="block text-white/80 hover:text-white py-2"
-                  >
-                    {label}
-                  </Link>
+                  <Fragment key={label}>
+                    <Link
+                      to={to}
+                      onClick={() => setMobileOpen(false)}
+                      className="block text-white/80 hover:text-white py-2"
+                    >
+                      {label}
+                    </Link>
+                    {label === 'AI Assistant' && isAuthenticated && role === 'student' && (
+                      <div className="pl-4 border-l-2 border-white/20 my-2 space-y-2">
+                        <Link to="/student/dashboard" onClick={() => setMobileOpen(false)} className="block text-white/70 hover:text-white text-sm py-1">➔ Dashboard</Link>
+                        <Link to="/student/complaints" onClick={() => setMobileOpen(false)} className="block text-white/70 hover:text-white text-sm py-1">➔ Complaints</Link>
+                        <Link to="/student/top-rated" onClick={() => setMobileOpen(false)} className="block text-white/70 hover:text-white text-sm py-1">➔ Top Rated</Link>
+                      </div>
+                    )}
+                  </Fragment>
                 ))}
 
-                <Link to="/login" className="block text-center mt-2 bg-green-500 text-white py-2 rounded-full">
-                  Login
-                </Link>
-
-                <Link to="/register" className="block text-center border border-green-400 text-green-400 py-2 rounded-full">
-                  Register
-                </Link>
+                {!isAuthenticated ? (
+                  <>
+                    <Link to="/login" className="block text-center mt-2 bg-green-500 text-white py-2 rounded-full">
+                      Login
+                    </Link>
+                    <Link to="/register" className="block text-center border border-green-400 text-green-400 py-2 mt-2 rounded-full">
+                      Register
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    <Link to="/profile" onClick={() => setMobileOpen(false)} className="block text-white/80 hover:text-white py-2">Profile</Link>
+                    <button onClick={handleLogout} className="block text-red-400 py-2 w-full text-left">
+                      Logout
+                    </button>
+                  </>
+                )}
               </>
             ) : (
               <>
-                <Link to={dashboardPath} className="block text-white py-2">Dashboard</Link>
-                <Link to="/profile" className="block text-white py-2">Profile</Link>
+                <Link to={dashboardPath} onClick={() => setMobileOpen(false)} className="block text-white py-2">Dashboard</Link>
+                <Link to="/profile" onClick={() => setMobileOpen(false)} className="block text-white py-2">Profile</Link>
 
-                <button onClick={handleLogout} className="block text-red-400 py-2">
+                <button onClick={handleLogout} className="block text-red-400 py-2 w-full text-left">
                   Logout
                 </button>
               </>

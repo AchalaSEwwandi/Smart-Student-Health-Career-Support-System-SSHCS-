@@ -73,7 +73,7 @@ const Register = () => {
         // role is forced to 'student' on the backend
       });
       toast.success('Account created! Welcome to CareMate 🎉');
-      navigate('/student/dashboard');
+      navigate('/');
     } catch (err) {
       const serverErrors = err.response?.data?.errors;
       if (serverErrors?.length > 0) {
