@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -14,6 +14,7 @@ import FeaturesSection from './components/FeaturesSection';
 import HowItWorksSection from './components/HowItWorksSection';
 import CTASection from './components/CTASection';
 import Footer from './components/Footer';
+import AdminFooter from './components/admin/AdminFooter';
 
 // Auth pages
 import Login from './pages/auth/Login';
@@ -47,7 +48,6 @@ const HomePage = () => (
     <FeaturesSection />
     <HowItWorksSection />
     <CTASection />
-    <Footer />
   </div>
 );
 
@@ -61,14 +61,15 @@ const Unauthorized = () => (
   </div>
 );
 
-function App() {
+const AppContent = () => {
+  const location = useLocation();
+  const isAdminRoute = location.pathname.startsWith('/admin');
+
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <div className="min-h-screen bg-white">
-          <Navbar />
-          <main>
-            <Routes>
+    <div className="min-h-screen flex flex-col bg-white">
+      <Navbar />
+      <main className="flex-1 pb-10">
+        <Routes>
               {/* Public */}
               <Route path="/" element={<HomePage />} />
               <Route path="/login" element={<Login />} />
@@ -100,11 +101,18 @@ function App() {
               <Route path="/shop/dashboard" element={<ProtectedRoute roles={['shop_owner']}><StudentProfile /></ProtectedRoute>} />
               <Route path="/delivery/dashboard" element={<ProtectedRoute roles={['delivery_person']}><StudentProfile /></ProtectedRoute>} />
 
-              {/* Fallback */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </main>
-        </div>
+        </Routes>
+      </main>
+      {isAdminRoute ? <AdminFooter /> : <Footer />}
+    </div>
+  );
+};
+
+function App() {
+  return (
+    <BrowserRouter>
+      <AuthProvider>
+        <AppContent />
         <ToastContainer
           position="top-right"
           autoClose={4000}

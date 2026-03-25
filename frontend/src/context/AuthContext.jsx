@@ -4,7 +4,7 @@ import api from '../services/api';
 export const AuthContext = createContext(null);
 
 const ROLE_REDIRECTS = {
-  student: '/student/dashboard',
+  student: '/',
   doctor: '/doctor/dashboard',
   shop_owner: '/shop/dashboard',
   delivery_person: '/delivery/dashboard',

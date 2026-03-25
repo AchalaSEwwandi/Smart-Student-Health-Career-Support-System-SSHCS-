@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import api from '../../services/api';
 import { toast } from 'react-toastify';
 import PerformanceScoreBar from '../../components/PerformanceScoreBar';
+import AddUserModal from '../../components/AddUserModal';
 
 const ROLE_COLORS = {
   student: 'bg-purple-100 text-purple-700',
@@ -19,6 +20,7 @@ const UserManagement = () => {
   const [roleFilter, setRoleFilter] = useState('');
   const [deleteModal, setDeleteModal] = useState(null);
   const [statusModal, setStatusModal] = useState(null);
+  const [addUserModal, setAddUserModal] = useState(false);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -86,6 +88,12 @@ const UserManagement = () => {
             <option value="delivery_person">Delivery Person</option>
             <option value="admin">Admin</option>
           </select>
+          <button
+            onClick={() => setAddUserModal(true)}
+            className="bg-blue-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-800 ml-auto flex items-center gap-2"
+          >
+            + Add User
+          </button>
         </div>
 
         {/* Table */}
@@ -195,6 +203,17 @@ const UserManagement = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Add user modal */}
+      {addUserModal && (
+        <AddUserModal
+          onClose={() => setAddUserModal(false)}
+          onSuccess={() => {
+            setPage(1);
+            fetchUsers();
+          }}
+        />
       )}
     </div>
   );

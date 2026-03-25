@@ -3,6 +3,48 @@ const Feedback = require('../models/Feedback');
 const Complaint = require('../models/Complaint');
 
 /**
+ * POST /api/admin/users
+ * Create a new user (admin only).
+ */
+const createUser = async (req, res, next) => {
+  try {
+    const { name, email, password, role, phone, isActive, ...roleData } = req.body;
+
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(409).json({ success: false, message: 'Email already in use.' });
+    }
+
+    const userData = {
+      name,
+      email,
+      password, // Pre-save hook will hash this
+      role,
+      phone,
+      isActive: isActive !== undefined ? isActive : true,
+      ...roleData, // studentId, licenseNumber, etc.
+    };
+
+    const user = await User.create(userData);
+
+    res.status(201).json({
+      success: true,
+      message: 'User created successfully.',
+      data: {
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+        },
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
  * GET /api/admin/users
  * Get all users with pagination (10 per page).
  */
@@ -354,7 +396,7 @@ const getAllFeedback = async (req, res, next) => {
 };
 
 module.exports = {
-  getAllUsers, getUserById, updateUserStatus, deleteUser,
+  createUser, getAllUsers, getUserById, updateUserStatus, deleteUser,
   getStats, getSentimentAnalytics,
   getAllComplaints, updateComplaint,
   getAllFeedback,

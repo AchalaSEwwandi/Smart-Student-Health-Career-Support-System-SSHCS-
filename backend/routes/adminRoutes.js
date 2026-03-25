@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const {
-  getAllUsers, getUserById, updateUserStatus, deleteUser,
+  createUser, getAllUsers, getUserById, updateUserStatus, deleteUser,
   getStats, getSentimentAnalytics,
   getAllComplaints, updateComplaint,
   getAllFeedback,
@@ -14,6 +14,7 @@ const adminOnly = [verifyToken, allowRoles('admin')];
 router.get('/stats', ...adminOnly, getStats);
 router.get('/sentiment-analytics', ...adminOnly, getSentimentAnalytics);
 
+router.post('/users', ...adminOnly, createUser);
 router.get('/users', ...adminOnly, getAllUsers);
 router.get('/users/:id', ...adminOnly, getUserById);
 router.put('/users/:id/status', ...adminOnly, updateUserStatus);
