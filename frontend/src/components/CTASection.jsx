@@ -1,4 +1,8 @@
+import { useNavigate } from 'react-router-dom';
+
 export default function CTASection() {
+  const navigate = useNavigate();
+
   return (
     <section id="cta" className="relative py-24 md:py-32 overflow-hidden"
       style={{ background: 'linear-gradient(135deg, #1E3A8A 0%, #2563EB 50%, #3B82F6 100%)' }}>
@@ -24,7 +28,17 @@ export default function CTASection() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
             </svg>
           </a>
-          <a href="#services" className="btn-outline text-lg px-10 py-4">Explore Services</a>
+          {/* ✅ Delivery Button */}
+          <button
+            id="cta-delivery-btn"
+            onClick={() => navigate('/delivery')}
+            className="inline-flex items-center justify-center gap-2 px-10 py-4 text-lg font-semibold rounded-full border-2 border-white text-white hover:bg-white hover:text-primary transform hover:-translate-y-0.5 transition-all duration-300"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8l1 12a2 2 0 002 2h8a2 2 0 002-2l1-12M10 12a1 1 0 102 0 1 1 0 00-2 0z" />
+            </svg>
+            Order Delivery
+          </button>
         </div>
         <div className="mt-12 flex flex-wrap gap-6 justify-center items-center text-blue-200 text-sm">
           {['No Credit Card Required', 'Free for Students', 'Cancel Anytime'].map((t) => (

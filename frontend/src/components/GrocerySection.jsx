@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import ProductCard from './ProductCard';
 
 const products = [
@@ -40,6 +41,7 @@ const products = [
 ];
 
 export default function GrocerySection() {
+  const navigate = useNavigate();
   return (
     <section id="grocery" className="section-padding bg-gray-50">
       <div className="max-w-7xl mx-auto">
@@ -74,9 +76,13 @@ export default function GrocerySection() {
               Use code <span className="font-bold text-white">CAREMATE10</span> for 10% off
             </p>
           </div>
-          <a href="#cta" className="px-8 py-3.5 bg-white text-accent font-bold rounded-full shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300">
-            Shop Now →
-          </a>
+          <button
+            id="grocery-order-btn"
+            onClick={() => navigate('/delivery/shops')}
+            className="px-8 py-3.5 bg-white text-accent font-bold rounded-full shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300"
+          >
+            Order Now →
+          </button>
         </div>
       </div>
     </section>
