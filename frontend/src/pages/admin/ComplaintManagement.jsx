@@ -167,7 +167,20 @@ const ComplaintManagement = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Admin Note</label>
-                <textarea value={editForm.adminNote} onChange={e => setEditForm(f => ({ ...f, adminNote: e.target.value }))} rows={3} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-800 resize-none" placeholder="Add a note visible to the student..." />
+                <textarea 
+                  value={editForm.adminNote} 
+                  onChange={e => {
+                    const newNote = e.target.value;
+                    setEditForm(f => ({ 
+                      ...f, 
+                      adminNote: newNote,
+                      status: (newNote && f.status === 'pending') ? 'resolved' : f.status
+                    }));
+                  }} 
+                  rows={3} 
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-800 resize-none" 
+                  placeholder="Add a note visible to the student..." 
+                />
               </div>
             </div>
 
