@@ -25,4 +25,15 @@ router.put('/complaints/:id', ...adminOnly, updateComplaint);
 
 router.get('/feedback', ...adminOnly, getAllFeedback);
 
+// Contact & Shop Requests
+const {
+  getContactRequests,
+  approveShopRequest,
+  rejectShopRequest
+} = require('../controllers/contactController');
+
+router.get('/contact-requests', ...adminOnly, getContactRequests);
+router.put('/contact-requests/:id/approve', ...adminOnly, approveShopRequest);
+router.put('/contact-requests/:id/reject', ...adminOnly, rejectShopRequest);
+
 module.exports = router;

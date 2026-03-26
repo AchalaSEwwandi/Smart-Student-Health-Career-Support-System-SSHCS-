@@ -16,6 +16,9 @@ import CTASection from './components/CTASection';
 import Footer from './components/Footer';
 import AdminFooter from './components/admin/AdminFooter';
 
+// Public pages
+import ContactUs from './pages/public/ContactUs';
+
 // Auth pages
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
@@ -39,6 +42,7 @@ import AdminDashboard from './pages/admin/Dashboard';
 import UserManagement from './pages/admin/UserManagement';
 import SentimentAnalytics from './pages/admin/SentimentAnalytics';
 import ComplaintManagement from './pages/admin/ComplaintManagement';
+import ContactManagement from './pages/admin/ContactManagement';
 
 const HomePage = () => (
   <div className="min-h-screen bg-white">
@@ -72,6 +76,7 @@ const AppContent = () => {
         <Routes>
               {/* Public */}
               <Route path="/" element={<HomePage />} />
+              <Route path="/contact" element={<ContactUs />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -95,6 +100,7 @@ const AppContent = () => {
               <Route path="/admin/users" element={<ProtectedRoute roles={['admin']}><UserManagement /></ProtectedRoute>} />
               <Route path="/admin/sentiment" element={<ProtectedRoute roles={['admin']}><SentimentAnalytics /></ProtectedRoute>} />
               <Route path="/admin/complaints" element={<ProtectedRoute roles={['admin']}><ComplaintManagement /></ProtectedRoute>} />
+              <Route path="/admin/contacts" element={<ProtectedRoute roles={['admin']}><ContactManagement /></ProtectedRoute>} />
 
               {/* Doctor / shop / delivery dashboards (placeholder redirects) */}
               <Route path="/doctor/dashboard" element={<ProtectedRoute roles={['doctor']}><StudentProfile /></ProtectedRoute>} />
