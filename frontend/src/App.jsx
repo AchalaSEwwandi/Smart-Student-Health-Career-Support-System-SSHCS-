@@ -19,6 +19,10 @@ import DeliveryConfirmation from './pages/delivery/DeliveryConfirmation';
 import RatingPage from './pages/delivery/RatingPage';
 import OrderHistory from './pages/delivery/OrderHistory';
 
+// Admin pages
+import AdminStoresDashboard from './pages/delivery/AdminStoresDashboard';
+import StoreDashboard from './pages/delivery/StoreDashboard';
+
 // Home Page component
 function HomePage() {
   return (
@@ -49,6 +53,9 @@ function App() {
         <Route path="/delivery/confirmation/:orderId" element={<DeliveryConfirmation />} />
         <Route path="/delivery/rating/:orderId" element={<RatingPage />} />
         <Route path="/delivery/history" element={<OrderHistory />} />
+        {/* Admin routes */}
+        <Route path="/admin/delivery/stores" element={<AdminStoresDashboard />} />
+        <Route path="/admin/delivery/stores/:storeSlug" element={<StoreDashboard />} />
       </Routes>
     </BrowserRouter>
   );

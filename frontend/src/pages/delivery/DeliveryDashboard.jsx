@@ -107,14 +107,31 @@ export default function DeliveryDashboard() {
               <p style={{ fontSize: '0.7rem', color: PRIMARY, margin: 0, lineHeight: 1 }}>Campus Delivery Service</p>
             </div>
           </div>
-          <button
-            className="back-btn"
-            onClick={() => navigate('/')}
-            style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.875rem', fontWeight: 500, color: PRIMARY, background: 'none', border: 'none', cursor: 'pointer', transition: 'color 0.2s' }}
-          >
-            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
-            Back to Home
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <button
+              id="admin-login-btn"
+              onClick={() => navigate('/admin/delivery/stores')}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '0.4rem',
+                padding: '0.45rem 1rem', fontSize: '0.8rem', fontWeight: 600,
+                color: '#93c5fd', background: 'rgba(59,130,246,0.12)',
+                border: '1px solid rgba(59,130,246,0.35)', borderRadius: '0.625rem',
+                cursor: 'pointer', transition: 'all 0.2s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(59,130,246,0.25)'; e.currentTarget.style.borderColor = PRIMARY; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(59,130,246,0.12)'; e.currentTarget.style.borderColor = 'rgba(59,130,246,0.35)'; }}
+            >
+              🔐 Login Admin
+            </button>
+            <button
+              className="back-btn"
+              onClick={() => navigate('/')}
+              style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.875rem', fontWeight: 500, color: PRIMARY, background: 'none', border: 'none', cursor: 'pointer', transition: 'color 0.2s' }}
+            >
+              <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+              Back to Home
+            </button>
+          </div>
         </div>
       </nav>
 

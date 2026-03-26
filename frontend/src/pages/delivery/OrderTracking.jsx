@@ -4,54 +4,53 @@ import axios from 'axios';
 
 const STATUS_STEPS = ['Pending', 'Processing', 'Out for Delivery', 'Delivered'];
 const STATUS_META = {
-  Pending:          { icon: '⏳', color: '#F59E0B', bg: 'rgba(245,158,11,0.1)',   border: 'rgba(245,158,11,0.3)',  desc: 'Order received, awaiting confirmation'   },
-  Processing:       { icon: '📦', color: '#60A5FA', bg: 'rgba(96,165,250,0.08)',  border: 'rgba(96,165,250,0.25)', desc: 'Order is being prepared at the shop'    },
-  'Out for Delivery':{ icon: '🛵', color: '#F97316', bg: 'rgba(249,115,22,0.1)',  border: 'rgba(249,115,22,0.3)',  desc: 'Your order is on its way to you!'       },
-  Delivered:        { icon: '✅', color: '#10B981', bg: 'rgba(16,185,129,0.1)',   border: 'rgba(16,185,129,0.3)', desc: 'Order has been delivered'               },
+  Pending:            { icon: '⏳', color: '#F59E0B', bg: 'rgba(245,158,11,0.1)',   border: 'rgba(245,158,11,0.3)',  desc: 'Order received, awaiting confirmation'   },
+  Processing:         { icon: '📦', color: '#60A5FA', bg: 'rgba(96,165,250,0.08)',  border: 'rgba(96,165,250,0.25)', desc: 'Order is being prepared at the shop'     },
+  'Out for Delivery': { icon: '🛵', color: '#F97316', bg: 'rgba(249,115,22,0.1)',   border: 'rgba(249,115,22,0.3)',  desc: 'Your order is on its way to you!'        },
+  Delivered:          { icon: '✅', color: '#10B981', bg: 'rgba(16,185,129,0.1)',   border: 'rgba(16,185,129,0.3)', desc: 'Order has been delivered successfully'   },
 };
 
 export default function OrderTracking() {
   const { orderId } = useParams();
-  const navigate = useNavigate();
+  const navigate    = useNavigate();
+
   const [tracking, setTracking] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading,  setLoading]  = useState(true);
   const intervalRef = useRef(null);
 
   const fetchTracking = () => {
     axios
       .get(`http://localhost:5000/api/orders/${orderId}/tracking`)
       .then((res) => setTracking(res.data.data))
-      .catch(() => setTracking({
-        orderId,
-        status: 'Processing',
-        shopName: sessionStorage.getItem('shopName') || 'Campus Shop',
-        grandTotal: JSON.parse(sessionStorage.getItem('orderMeta') || '{}').grandTotal || 0,
-        deliveryPersonName: 'Kamal Perera',
-        createdAt: new Date().toISOString(),
-      }))
+      .catch(() =>
+        setTracking({
+          orderId,
+          status:             'Processing',
+          shopName:           sessionStorage.getItem('shopName') || 'Campus Shop',
+          grandTotal:         JSON.parse(sessionStorage.getItem('orderMeta') || '{}').grandTotal || 0,
+          deliveryPersonName: 'Kamal Perera',
+          createdAt:          new Date().toISOString(),
+        })
+      )
       .finally(() => setLoading(false));
   };
 
   useEffect(() => {
     fetchTracking();
+    /* Poll every 8 s — picks up admin status changes automatically */
     intervalRef.current = setInterval(fetchTracking, 8000);
     return () => clearInterval(intervalRef.current);
   }, [orderId]);
 
-  const simulateNext = async () => {
-    const idx = STATUS_STEPS.indexOf(tracking?.status);
-    if (idx < STATUS_STEPS.length - 1) {
-      const nextStatus = STATUS_STEPS[idx + 1];
-      try { await axios.put(`http://localhost:5000/api/orders/${orderId}/status`, { status: nextStatus }); } catch (_) {}
-      setTracking((t) => ({ ...t, status: nextStatus }));
-    }
-  };
-
-  const currentIdx = STATUS_STEPS.indexOf(tracking?.status || 'Pending');
+  const currentIdx  = STATUS_STEPS.indexOf(tracking?.status || 'Pending');
   const progressPct = Math.round(((currentIdx + 1) / STATUS_STEPS.length) * 100);
   const currentMeta = STATUS_META[tracking?.status] || STATUS_META.Pending;
 
-  const darkCard = { background: '#1E293B', border: '1px solid rgba(96,165,250,0.1)', boxShadow: '0 4px 20px rgba(0,0,0,0.3)' };
+  const darkCard = {
+    background: '#1E293B',
+    border:     '1px solid rgba(96,165,250,0.1)',
+    boxShadow:  '0 4px 20px rgba(0,0,0,0.3)',
+  };
 
   return (
     <div className="min-h-screen" style={{ background: '#0F172A' }}>
@@ -72,23 +71,29 @@ export default function OrderTracking() {
             Dashboard
           </button>
           <span className="font-bold text-sm" style={{ color: '#F8FAFC' }}>Order Tracking</span>
+          {/* Live refresh indicator */}
+          <div className="flex items-center gap-1.5">
+            <span style={{ width: '0.45rem', height: '0.45rem', borderRadius: '50%', background: '#10B981', display: 'inline-block', boxShadow: '0 0 6px #10B981' }} />
+            <span style={{ fontSize: '0.7rem', color: '#64748B' }}>Live</span>
+          </div>
         </div>
       </nav>
 
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <div className="text-center mb-8">
           <h1 className="text-3xl sm:text-4xl font-extrabold mb-2" style={{ color: '#F8FAFC' }}>Track Your Order</h1>
-          <p className="text-sm" style={{ color: '#CBD5E1' }}>Real-time delivery updates</p>
+          <p className="text-sm" style={{ color: '#CBD5E1' }}>Status updates automatically every 8 seconds</p>
         </div>
 
         {loading ? (
           <div className="flex flex-col items-center justify-center py-24 gap-4">
             <div className="w-12 h-12 border-4 rounded-full animate-spin" style={{ borderColor: 'rgba(96,165,250,0.3)', borderTopColor: '#60A5FA' }} />
-            <p className="text-sm" style={{ color: '#64748B' }}>Loading order info...</p>
+            <p className="text-sm" style={{ color: '#64748B' }}>Loading order info…</p>
           </div>
         ) : (
           <div className="space-y-5">
-            {/* Status Banner */}
+
+            {/* ── Status Banner ── */}
             <div
               className="rounded-3xl p-6 flex items-center gap-5"
               style={{ background: currentMeta.bg, border: `1px solid ${currentMeta.border}`, boxShadow: `0 4px 20px ${currentMeta.bg}` }}
@@ -101,17 +106,17 @@ export default function OrderTracking() {
               </div>
             </div>
 
-            {/* Order Details */}
+            {/* ── Order Details ── */}
             <div className="rounded-3xl overflow-hidden" style={darkCard}>
               <div className="px-6 py-4" style={{ borderBottom: '1px solid rgba(96,165,250,0.08)' }}>
                 <h3 className="font-bold text-sm" style={{ color: '#F8FAFC' }}>Order Details</h3>
               </div>
               <div className="px-6 py-4 grid grid-cols-2 gap-4">
                 {[
-                  { label: 'Order ID', value: String(tracking?.orderId).slice(0, 18) + '...' },
-                  { label: 'Shop', value: tracking?.shopName || '—' },
-                  { label: 'Total Paid', value: `Rs. ${tracking?.grandTotal || 0}`, green: true },
-                  { label: 'Delivery Person', value: tracking?.deliveryPersonName || 'Assigning...' },
+                  { label: 'Order ID',        value: String(tracking?.orderId).slice(0, 18) + '…' },
+                  { label: 'Shop',            value: tracking?.shopName || '—' },
+                  { label: 'Total Paid',      value: `Rs. ${tracking?.grandTotal || 0}`, green: true },
+                  { label: 'Delivery Person', value: tracking?.deliveryPersonName || 'Assigning…' },
                 ].map((d) => (
                   <div key={d.label}>
                     <p className="text-xs mb-0.5" style={{ color: '#64748B' }}>{d.label}</p>
@@ -121,12 +126,14 @@ export default function OrderTracking() {
               </div>
             </div>
 
-            {/* Stepper */}
+            {/* ── Progress Stepper ── */}
             <div className="rounded-3xl overflow-hidden" style={darkCard}>
               <div className="px-6 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid rgba(96,165,250,0.08)' }}>
                 <h3 className="font-bold text-sm" style={{ color: '#F8FAFC' }}>Order Progress</h3>
-                <span className="text-xs font-bold px-2.5 py-1 rounded-full"
-                  style={{ background: 'rgba(37,99,235,0.15)', color: '#60A5FA', border: '1px solid rgba(37,99,235,0.25)' }}>
+                <span
+                  className="text-xs font-bold px-2.5 py-1 rounded-full"
+                  style={{ background: 'rgba(37,99,235,0.15)', color: '#60A5FA', border: '1px solid rgba(37,99,235,0.25)' }}
+                >
                   {progressPct}%
                 </span>
               </div>
@@ -138,37 +145,65 @@ export default function OrderTracking() {
                     style={{ width: `${progressPct}%`, background: 'linear-gradient(to right, #1D4ED8, #60A5FA)', boxShadow: '0 0 8px rgba(96,165,250,0.5)' }}
                   />
                 </div>
+
+                {/* Steps */}
                 <div className="space-y-3">
                   {STATUS_STEPS.map((step, idx) => {
-                    const done = idx <= currentIdx;
+                    const done   = idx <= currentIdx;
                     const active = idx === currentIdx;
-                    const meta = STATUS_META[step];
+                    const past   = idx < currentIdx;
+                    const meta   = STATUS_META[step];
                     return (
                       <div
                         key={step}
-                        className="flex items-center gap-4 p-3 rounded-2xl transition-all duration-200"
-                        style={active ? { background: 'rgba(37,99,235,0.1)', border: '1px solid rgba(37,99,235,0.25)' } : {}}
+                        className="flex items-center gap-4 p-3 rounded-2xl transition-all duration-300"
+                        style={
+                          active
+                            ? { background: 'rgba(37,99,235,0.1)', border: '1px solid rgba(37,99,235,0.25)' }
+                            : past
+                            ? { background: 'rgba(16,185,129,0.04)', border: '1px solid rgba(16,185,129,0.1)' }
+                            : {}
+                        }
                       >
+                        {/* Icon bubble */}
                         <div
-                          className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl shrink-0 transition-all duration-200"
-                          style={done
-                            ? { background: '#2563EB', boxShadow: '0 4px 12px rgba(37,99,235,0.5)' }
-                            : { background: 'rgba(255,255,255,0.05)' }
+                          className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl shrink-0 transition-all duration-300"
+                          style={
+                            past
+                              ? { background: '#059669', boxShadow: '0 4px 12px rgba(16,185,129,0.45)' }
+                              : active
+                              ? { background: '#2563EB', boxShadow: '0 4px 12px rgba(37,99,235,0.5)' }
+                              : { background: 'rgba(255,255,255,0.05)' }
                           }
                         >
-                          {idx < currentIdx ? (
+                          {past ? (
+                            /* Tick for completed steps */
                             <svg className="w-6 h-6" style={{ color: '#fff' }} fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                             </svg>
                           ) : (
-                            <span style={done ? {} : { filter: 'grayscale(1)', opacity: 0.4 }}>{meta.icon}</span>
+                            <span style={done ? {} : { filter: 'grayscale(1)', opacity: 0.35 }}>{meta.icon}</span>
                           )}
                         </div>
+
+                        {/* Text */}
                         <div className="flex-1">
-                          <p className="font-semibold text-sm" style={{ color: done ? '#F8FAFC' : '#475569' }}>{step}</p>
-                          {active && <p className="text-xs animate-pulse mt-0.5" style={{ color: '#60A5FA' }}>← In progress</p>}
-                          {idx < currentIdx && <p className="text-xs mt-0.5" style={{ color: '#10B981' }}>Completed</p>}
-                          {!done && !active && <p className="text-xs mt-0.5" style={{ color: '#475569' }}>{meta.desc}</p>}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <p className="font-semibold text-sm" style={{ color: done ? '#F8FAFC' : '#475569' }}>{step}</p>
+                            {active && (
+                              <span style={{ fontSize: '0.65rem', fontWeight: 700, color: '#60A5FA', background: 'rgba(37,99,235,0.15)', border: '1px solid rgba(37,99,235,0.3)', borderRadius: '999px', padding: '0.1rem 0.45rem' }}>
+                                IN PROGRESS
+                              </span>
+                            )}
+                            {past && (
+                              <span style={{ fontSize: '0.65rem', fontWeight: 700, color: '#10B981', background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.25)', borderRadius: '999px', padding: '0.1rem 0.45rem' }}>
+                                DONE
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs mt-0.5" style={{ color: active ? '#60A5FA' : past ? '#10B981' : '#475569' }}>
+                            {active ? meta.desc : past ? 'Completed ✓' : meta.desc}
+                          </p>
                         </div>
                       </div>
                     );
@@ -177,20 +212,7 @@ export default function OrderTracking() {
               </div>
             </div>
 
-            {/* Demo Simulate */}
-            {tracking?.status !== 'Delivered' && (
-              <button
-                id="simulate-next-status-btn"
-                onClick={simulateNext}
-                className="w-full py-3 rounded-2xl text-sm font-semibold transition-all duration-200"
-                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(96,165,250,0.2)', color: '#60A5FA' }}
-                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(37,99,235,0.1)'; e.currentTarget.style.color = '#93C5FD'; }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = '#60A5FA'; }}
-              >
-                🔄 Simulate Next Status (Demo)
-              </button>
-            )}
-
+            {/* ── Action Buttons (read-only — no status change) ── */}
             {tracking?.status === 'Delivered' ? (
               <button
                 id="confirm-delivery-btn"
@@ -214,6 +236,11 @@ export default function OrderTracking() {
                 Mark as Received
               </button>
             )}
+
+            {/* Info note */}
+            <p className="text-center text-xs" style={{ color: '#334155', paddingTop: '0.25rem' }}>
+              Status is updated by the store admin. This page refreshes automatically.
+            </p>
           </div>
         )}
       </div>

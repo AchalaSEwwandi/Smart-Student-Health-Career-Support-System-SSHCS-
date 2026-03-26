@@ -8,6 +8,7 @@ dotenv.config();
 const connectDB = require('./config/db');
 const shopRoutes = require('./routes/shopRoutes');
 const orderRoutes = require('./routes/orderRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 
 // Connect to MongoDB
 connectDB();
@@ -26,6 +27,7 @@ app.get('/', (req, res) => {
 
 app.use('/api/shops', shopRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Start server
 app.listen(PORT, () => {
