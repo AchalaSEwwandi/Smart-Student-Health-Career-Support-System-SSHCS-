@@ -247,8 +247,11 @@ const saveDeliveryAddress = async (req, res) => {
     if (!telephone || !telephone.trim()) {
       return res.status(400).json({ success: false, message: 'Telephone number is required' });
     }
-    if (!/^[0-9]{7,15}$/.test(telephone.replace(/[\s\-\+]/g, ''))) {
-      return res.status(400).json({ success: false, message: 'Telephone must be a valid number' });
+    if (/[^0-9]/.test(telephone)) {
+      return res.status(400).json({ success: false, message: 'Only numbers are allowed' });
+    }
+    if (telephone.length < 10) {
+      return res.status(400).json({ success: false, message: 'Telephone number must be at least 10 digits' });
     }
     if (!email || !email.trim()) {
       return res.status(400).json({ success: false, message: 'Email address is required' });
