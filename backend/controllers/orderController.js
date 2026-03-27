@@ -230,6 +230,49 @@ const submitRating = async (req, res) => {
   }
 };
 
+// POST save delivery address details
+const saveDeliveryAddress = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { deliveryArea, deliveryAddress, telephone, email, confirmedOrder } = req.body;
+
+    // Backend validation
+    const validAreas = ['Inside Campus', 'Outside Campus (around 1km)'];
+    if (!deliveryArea || !validAreas.includes(deliveryArea)) {
+      return res.status(400).json({ success: false, message: 'Delivery area must be selected' });
+    }
+    if (!deliveryAddress || !deliveryAddress.trim()) {
+      return res.status(400).json({ success: false, message: 'Delivery address is required' });
+    }
+    if (!telephone || !telephone.trim()) {
+      return res.status(400).json({ success: false, message: 'Telephone number is required' });
+    }
+    if (!/^[0-9]{7,15}$/.test(telephone.replace(/[\s\-\+]/g, ''))) {
+      return res.status(400).json({ success: false, message: 'Telephone must be a valid number' });
+    }
+    if (!email || !email.trim()) {
+      return res.status(400).json({ success: false, message: 'Email address is required' });
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({ success: false, message: 'Email must be a valid format' });
+    }
+    if (!confirmedOrder) {
+      return res.status(400).json({ success: false, message: 'You must confirm the order details' });
+    }
+
+    const order = await Order.findByIdAndUpdate(
+      orderId,
+      { deliveryArea, deliveryAddress: deliveryAddress.trim(), telephone: telephone.trim(), email: email.trim(), confirmedOrder: true },
+      { new: true }
+    );
+    if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
+
+    res.json({ success: true, message: 'Delivery details saved', data: order });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // GET order history — filtered by session key
 const getOrderHistory = async (req, res) => {
   try {
@@ -275,4 +318,5 @@ module.exports = {
   confirmDelivery,
   submitRating,
   getOrderHistory,
+  saveDeliveryAddress,
 };

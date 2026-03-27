@@ -10,6 +10,7 @@ const {
   confirmDelivery,
   submitRating,
   getOrderHistory,
+  saveDeliveryAddress,
 } = require('../controllers/orderController');
 
 // POST /api/orders - create order
@@ -38,5 +39,8 @@ router.post('/:orderId/confirm', confirmDelivery);
 
 // POST /api/orders/rate - submit rating
 router.post('/rate', submitRating);
+
+// POST /api/orders/:orderId/delivery-address - save delivery address details
+router.post('/:orderId/delivery-address', saveDeliveryAddress);
 
 module.exports = router;

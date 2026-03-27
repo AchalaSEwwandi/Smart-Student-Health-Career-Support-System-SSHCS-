@@ -83,7 +83,7 @@ export default function PaymentPage() {
       });
     } catch (_) {}
     try { await axios.post('http://localhost:5000/api/orders/assign-delivery', { orderId }); } catch (_) {}
-    navigate(`/delivery/tracking/${orderId}`);
+    navigate(`/delivery/address/${orderId}`);
     setLoading(false);
   };
 
