@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { toast } from 'react-toastify';
+import { useNavigate } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
 import api from '../../services/api';
 
@@ -11,6 +12,7 @@ const Profile = () => {
   const [pwData, setPwData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [pwLoading, setPwLoading] = useState(false);
   const fileRef = useRef();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (user) setFormData({ ...user });
@@ -164,6 +166,7 @@ const Profile = () => {
             </form>
           </div>
         </div>
+
       </div>
     </div>
   );

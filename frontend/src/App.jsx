@@ -34,6 +34,10 @@ import Contact from './pages/shared/Contact';
 import AdminDashboard from './pages/admin/Dashboard';
 import AdminUsers from './pages/admin/Users';
 import AdminMessages from './pages/admin/Messages';
+import SentimentAnalytics from './pages/admin/SentimentAnalytics';
+
+// Feedback Form
+import FeedbackForm from './pages/student/FeedbackForm';
 
 const HomePage = () => (
   <div className="min-h-screen bg-white">
@@ -88,6 +92,10 @@ const AppContent = () => {
               <Route path="/admin/dashboard" element={<ProtectedRoute roles={['admin']}><AdminDashboard /></ProtectedRoute>} />
               <Route path="/admin/users" element={<ProtectedRoute roles={['admin']}><AdminUsers /></ProtectedRoute>} />
               <Route path="/admin/messages" element={<ProtectedRoute roles={['admin']}><AdminMessages /></ProtectedRoute>} />
+              <Route path="/admin/sentiment" element={<ProtectedRoute roles={['admin']}><SentimentAnalytics /></ProtectedRoute>} />
+
+              {/* Feedback Form */}
+              <Route path="/feedback" element={<ProtectedRoute roles={['student']}><FeedbackForm /></ProtectedRoute>} />
 
         </Routes>
       </main>
