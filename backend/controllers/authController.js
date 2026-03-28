@@ -6,47 +6,95 @@ const sendEmail = require('../utils/sendEmail');
 
 /**
  * Generate JWT access token (15 min).
- * @param {string} id - user id
- * @param {string} role - user role
  */
 const generateAccessToken = (id, role) =>
   jwt.sign({ id, role }, process.env.JWT_SECRET, { expiresIn: '15m' });
 
 /**
  * Generate JWT refresh token (7 days).
- * @param {string} id
  */
 const generateRefreshToken = (id) =>
   jwt.sign({ id }, process.env.JWT_REFRESH_SECRET, { expiresIn: '7d' });
 
 /**
  * POST /api/auth/register
- * Register a new user with role-specific fields.
+ * Supports: student, doctor, shop_owner
+ * Students → status: 'approved'  (auto)
+ * Doctors & Vendors → status: 'pending' (awaits admin approval)
  */
 const register = async (req, res, next) => {
   try {
-    const { name, email, password, phone, studentId, year, semester, faculty } = req.body;
+    const {
+      name, email, password, phone, role,
+      // student fields
+      studentId, year, semester, faculty,
+      // doctor fields
+      nic, medicalRegNumber, specialization, yearsOfExperience, hospitalName,
+      // vendor fields
+      shopName, businessType, shopAddress,
+    } = req.body;
+
+    // Allowed self-registration roles
+    const allowedRoles = ['student', 'doctor', 'shop_owner'];
+    const chosenRole = allowedRoles.includes(role) ? role : 'student';
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(409).json({ success: false, message: 'Email already in use.' });
     }
 
-    // Only students can self-register — role is always forced to 'student'
-    const userData = {
-      name,
-      email,
-      password,
-      phone,
-      role: 'student',
-      studentId,
-      year,
-      semester,
-      faculty,
-    };
+    // Auto-set status
+    const status = chosenRole === 'student' ? 'approved' : 'pending';
+
+    // Build user data
+    const userData = { name, email, password, phone, role: chosenRole, status };
+
+    if (chosenRole === 'student') {
+      Object.assign(userData, { studentId, year, semester, faculty });
+    }
+
+    if (chosenRole === 'doctor') {
+      Object.assign(userData, {
+        nic,
+        medicalRegNumber,
+        specialization,
+        yearsOfExperience: yearsOfExperience ? Number(yearsOfExperience) : undefined,
+        hospitalName,
+        medicalLicenseFile: req.files?.medicalLicenseFile?.[0]?.filename || '',
+      });
+    }
+
+    if (chosenRole === 'shop_owner') {
+      Object.assign(userData, {
+        nic,
+        shopName,
+        businessType,
+        shopAddress,
+        businessLicenseFile: req.files?.businessLicenseFile?.[0]?.filename || '',
+      });
+    }
 
     const user = await User.create(userData);
 
+    // For pending users: return without tokens (they cannot access the app yet)
+    if (status === 'pending') {
+      return res.status(201).json({
+        success: true,
+        pending: true,
+        message: 'Registration submitted! Your account is pending admin approval. You will be notified by email once approved.',
+        data: {
+          user: {
+            id: user._id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            status: user.status,
+          },
+        },
+      });
+    }
+
+    // For approved (student): issue tokens immediately
     const accessToken = generateAccessToken(user._id, user.role);
     const refreshToken = generateRefreshToken(user._id);
     user.refreshToken = refreshToken;
@@ -61,6 +109,7 @@ const register = async (req, res, next) => {
 
     res.status(201).json({
       success: true,
+      pending: false,
       message: 'User registered successfully.',
       data: {
         accessToken,
@@ -69,6 +118,7 @@ const register = async (req, res, next) => {
           name: user.name,
           email: user.email,
           role: user.role,
+          status: user.status,
           avatar: user.avatar,
           isActive: user.isActive,
         },
@@ -81,7 +131,7 @@ const register = async (req, res, next) => {
 
 /**
  * POST /api/auth/login
- * Authenticate user and return tokens.
+ * Authenticate user. Returns status field for pending banner.
  */
 const login = async (req, res, next) => {
   try {
@@ -123,6 +173,7 @@ const login = async (req, res, next) => {
           name: user.name,
           email: user.email,
           role: user.role,
+          status: user.status,   // ← NEW: allows frontend to show pending banner
           avatar: user.avatar,
           isActive: user.isActive,
         },
@@ -135,7 +186,6 @@ const login = async (req, res, next) => {
 
 /**
  * POST /api/auth/logout
- * Clear refresh token cookie and invalidate in DB.
  */
 const logout = async (req, res, next) => {
   try {
@@ -143,7 +193,6 @@ const logout = async (req, res, next) => {
     if (refreshToken) {
       await User.findOneAndUpdate({ refreshToken }, { refreshToken: '' });
     }
-
     res.clearCookie('refreshToken');
     res.json({ success: true, message: 'Logged out successfully.' });
   } catch (error) {
@@ -153,7 +202,6 @@ const logout = async (req, res, next) => {
 
 /**
  * POST /api/auth/refresh-token
- * Validate refresh token from cookie and issue new access token.
  */
 const refreshToken = async (req, res, next) => {
   try {
@@ -178,7 +226,6 @@ const refreshToken = async (req, res, next) => {
 
 /**
  * POST /api/auth/forgot-password
- * Generate OTP and send to user's email.
  */
 const forgotPassword = async (req, res, next) => {
   try {
@@ -186,14 +233,13 @@ const forgotPassword = async (req, res, next) => {
 
     const user = await User.findOne({ email });
     if (!user) {
-      // Return success to prevent email enumeration
       return res.json({ success: true, message: 'If that email exists, an OTP has been sent.' });
     }
 
     const otp = generateOTP();
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
-    await OTP.deleteMany({ email }); // Remove old OTPs
+    await OTP.deleteMany({ email });
     await OTP.create({ email, otp, expiresAt });
 
     await sendEmail({
@@ -210,7 +256,6 @@ const forgotPassword = async (req, res, next) => {
 
 /**
  * POST /api/auth/verify-otp
- * Validate OTP and return a short-lived reset token.
  */
 const verifyOTP = async (req, res, next) => {
   try {
@@ -230,9 +275,7 @@ const verifyOTP = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'OTP has expired. Request a new one.' });
     }
 
-    // Short-lived reset token (5 min)
     const resetToken = jwt.sign({ email }, process.env.JWT_RESET_SECRET, { expiresIn: '5m' });
-
     res.json({ success: true, message: 'OTP verified.', data: { resetToken } });
   } catch (error) {
     next(error);
@@ -241,7 +284,6 @@ const verifyOTP = async (req, res, next) => {
 
 /**
  * POST /api/auth/reset-password
- * Validate reset token, hash new password, invalidate OTP.
  */
 const resetPassword = async (req, res, next) => {
   try {

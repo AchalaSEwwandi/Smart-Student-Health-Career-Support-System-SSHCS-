@@ -4,39 +4,36 @@ import api from '../services/api';
 export const AuthContext = createContext(null);
 
 const ROLE_REDIRECTS = {
-  student: '/',
-  doctor: '/doctor/dashboard',
-  shop_owner: '/shop/dashboard',
+  student:         '/',
+  doctor:          '/doctor/dashboard',
+  shop_owner:      '/shop/dashboard',
   delivery_person: '/delivery/dashboard',
-  admin: '/admin/dashboard',
+  admin:           '/admin/dashboard',
 };
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem('accessToken'));
+  const [user, setUser]       = useState(null);
+  const [token, setToken]     = useState(localStorage.getItem('accessToken'));
   const [loading, setLoading] = useState(true);
 
   const isAuthenticated = !!token && !!user;
-  const role = user?.role || null;
+  const role            = user?.role   || null;
+  const status          = user?.status || null;
 
   // Restore session on mount
   useEffect(() => {
-    const restoreSession = async () => {
-      const savedToken = localStorage.getItem('accessToken');
-      const savedUser = localStorage.getItem('authUser');
-
-      if (savedToken && savedUser) {
-        setToken(savedToken);
-        setUser(JSON.parse(savedUser));
-      }
-      setLoading(false);
-    };
-    restoreSession();
+    const savedToken = localStorage.getItem('accessToken');
+    const savedUser  = localStorage.getItem('authUser');
+    if (savedToken && savedUser) {
+      setToken(savedToken);
+      setUser(JSON.parse(savedUser));
+    }
+    setLoading(false);
   }, []);
 
   /**
    * Login — store tokens and user.
-   * @returns {string} role-based redirect path
+   * @returns {{ redirectPath: string, user: object }}
    */
   const login = useCallback(async (email, password) => {
     const { data } = await api.post('/auth/login', { email, password });
@@ -47,23 +44,39 @@ export const AuthProvider = ({ children }) => {
     setToken(accessToken);
     setUser(userData);
 
-    return ROLE_REDIRECTS[userData.role] || '/';
+    return {
+      redirectPath: ROLE_REDIRECTS[userData.role] || '/',
+      user: userData,
+    };
   }, []);
 
   /**
-   * Register — store tokens and user.
-   * @returns {string} role-based redirect path
+   * Register — supports both plain JSON (student) and FormData (doctor/vendor).
+   * @param {object|FormData} formData
+   * @returns {{ pending: boolean, redirectPath?: string }}
    */
   const register = useCallback(async (formData) => {
-    const { data } = await api.post('/auth/register', formData);
-    const { accessToken, user: userData } = data.data;
+    const isFormData = formData instanceof FormData;
 
+    const { data } = await api.post('/auth/register', formData, {
+      headers: isFormData ? { 'Content-Type': 'multipart/form-data' } : {},
+    });
+
+    // Pending user (doctor/vendor) — no tokens issued by backend
+    if (data.pending) {
+      return { pending: true };
+    }
+
+    const { accessToken, user: userData } = data.data;
     localStorage.setItem('accessToken', accessToken);
     localStorage.setItem('authUser', JSON.stringify(userData));
     setToken(accessToken);
     setUser(userData);
 
-    return ROLE_REDIRECTS[userData.role] || '/';
+    return {
+      pending: false,
+      redirectPath: ROLE_REDIRECTS[userData.role] || '/',
+    };
   }, []);
 
   /**
@@ -83,7 +96,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   /**
-   * Update user in context (after profile update).
+   * Update user in context (e.g. after profile update).
    */
   const updateUser = useCallback((updatedUser) => {
     setUser(updatedUser);
@@ -92,7 +105,7 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider
-      value={{ user, token, role, isAuthenticated, loading, login, register, logout, updateUser, ROLE_REDIRECTS }}
+      value={{ user, token, role, status, isAuthenticated, loading, login, register, logout, updateUser, ROLE_REDIRECTS }}
     >
       {children}
     </AuthContext.Provider>

@@ -1,83 +1,162 @@
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { yupResolver } from '@hookform/resolvers/yup';
-import * as yup from 'yup';
+import { useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import useAuth from '../../hooks/useAuth';
 
-const schema = yup.object({
-  name: yup.string().required('Full name is required').min(2, 'Minimum 2 characters'),
-  email: yup.string().email('Enter a valid email').required('Email is required'),
-  phone: yup.string().matches(/^\d{10}$/, 'Phone number must be exactly 10 digits').required('Phone number is required'),
-  password: yup.string().min(6, 'Minimum 6 characters').required('Password is required'),
-  confirmPassword: yup
-    .string()
-    .oneOf([yup.ref('password')], 'Passwords do not match')
-    .required('Please confirm your password'),
-  studentId: yup.string().required('Student ID is required'),
-  year: yup
-    .number()
-    .typeError('Year must be a number')
-    .min(1, 'Min year is 1')
-    .max(5, 'Max year is 5')
-    .required('Year is required'),
-  semester: yup
-    .number()
-    .typeError('Semester must be a number')
-    .min(1, 'Min semester is 1')
-    .max(2, 'Max semester is 2')
-    .required('Semester is required'),
-  faculty: yup.string().required('Faculty is required'),
-});
+// ── Helpers ──────────────────────────────────────────────────────────────────
+const inputCls = (err) =>
+  `w-full px-4 py-2.5 rounded-xl border text-sm focus:outline-none focus:ring-2 transition-all ${
+    err ? 'border-red-400 bg-red-50 focus:ring-red-300' : 'border-gray-300 bg-white focus:ring-blue-500'
+  }`;
 
-const Field = ({ label, error, children }) => (
+const Field = ({ label, error, required, children }) => (
   <div>
-    <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+    <label className="block text-sm font-medium text-gray-700 mb-1">
+      {label} {required && <span className="text-red-500">*</span>}
+    </label>
     {children}
-    {error && <p className="mt-1 text-xs text-red-500">{error.message}</p>}
+    {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
   </div>
 );
 
-const inputClass = (hasError) =>
-  `w-full px-4 py-3 rounded-xl border text-sm focus:outline-none focus:ring-2 transition-all ${
-    hasError
-      ? 'border-red-400 bg-red-50 focus:ring-red-300'
-      : 'border-gray-300 bg-white focus:ring-blue-500'
-  }`;
+const FACULTIES = [
+  'Faculty of Computing',
+  'Faculty of Engineering',
+  'Faculty of Business',
+  'Faculty of Medicine',
+  'Faculty of Science',
+  'Faculty of Arts',
+  'Faculty of Law',
+  'Faculty of Education',
+];
 
+const SPECIALIZATIONS = [
+  'General Medicine',
+  'Cardiology',
+  'Dermatology',
+  'Orthopedics',
+  'Pediatrics',
+  'Psychiatry',
+  'Neurology',
+  'Gynecology',
+  'ENT',
+  'Ophthalmology',
+  'Other',
+];
+
+// ── Main Component ────────────────────────────────────────────────────────────
 const Register = () => {
   const { register: authRegister } = useAuth();
   const navigate = useNavigate();
+
+  const [role, setRole] = useState('student');
   const [loading, setLoading] = useState(false);
   const [showPw, setShowPw] = useState(false);
+  const [errors, setErrors] = useState({});
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm({ resolver: yupResolver(schema) });
+  // Controlled fields
+  const [fields, setFields] = useState({
+    name: '', email: '', phone: '', password: '', confirmPassword: '',
+    // student
+    studentId: '', faculty: '', year: '', semester: '',
+    // doctor
+    nic: '', medicalRegNumber: '', specialization: '', yearsOfExperience: '', hospitalName: '',
+    // vendor
+    shopName: '', businessType: '', shopAddress: '',
+  });
+  const [medicalLicenseFile, setMedicalLicenseFile] = useState(null);
+  const [businessLicenseFile, setBusinessLicenseFile] = useState(null);
 
-  const onSubmit = async (data) => {
+  const set = useCallback((key) => (e) => {
+    setFields((prev) => ({ ...prev, [key]: e.target.value }));
+    setErrors((prev) => ({ ...prev, [key]: '' }));
+  }, []);
+
+  // ── Validation ──────────────────────────────────────────────────────────────
+  const validate = () => {
+    const errs = {};
+    if (!fields.name.trim()) errs.name = 'Full name is required';
+    if (!fields.email.match(/^\S+@\S+\.\S+$/)) errs.email = 'Valid email is required';
+    if (!fields.phone.match(/^\d{10}$/)) errs.phone = 'Phone must be exactly 10 digits';
+    if (fields.password.length < 6) errs.password = 'Password must be at least 6 characters';
+    if (fields.password !== fields.confirmPassword) errs.confirmPassword = 'Passwords do not match';
+
+    if (role === 'student') {
+      if (!fields.studentId.trim()) errs.studentId = 'Student ID is required';
+      if (!fields.faculty) errs.faculty = 'Faculty is required';
+      if (!fields.year || fields.year < 1 || fields.year > 4) errs.year = 'Year must be 1–4';
+      if (!fields.semester || fields.semester < 1 || fields.semester > 2) errs.semester = 'Semester must be 1 or 2';
+    }
+
+    if (role === 'doctor') {
+      if (!fields.nic.trim()) errs.nic = 'NIC is required';
+      if (!fields.medicalRegNumber.trim()) errs.medicalRegNumber = 'Medical registration number is required';
+      if (!fields.specialization) errs.specialization = 'Specialization is required';
+      if (!fields.yearsOfExperience || fields.yearsOfExperience < 0) errs.yearsOfExperience = 'Years of experience is required';
+      if (!fields.hospitalName.trim()) errs.hospitalName = 'Hospital/Clinic name is required';
+      if (!medicalLicenseFile) errs.medicalLicenseFile = 'Medical license PDF is required';
+    }
+
+    if (role === 'shop_owner') {
+      if (!fields.nic.trim()) errs.nic = 'NIC is required';
+      if (!fields.shopName.trim()) errs.shopName = 'Shop name is required';
+      if (!fields.businessType) errs.businessType = 'Business type is required';
+      if (!fields.shopAddress.trim()) errs.shopAddress = 'Shop address is required';
+    }
+
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
+  // ── Submit ──────────────────────────────────────────────────────────────────
+  const onSubmit = async (e) => {
+    e.preventDefault();
+    if (!validate()) return;
+
     setLoading(true);
     try {
-      await authRegister({
-        name: data.name,
-        email: data.email,
-        phone: data.phone,
-        password: data.password,
-        studentId: data.studentId,
-        year: Number(data.year),
-        semester: Number(data.semester),
-        faculty: data.faculty,
-        // role is forced to 'student' on the backend
-      });
-      toast.success('Account created! Welcome to CareMate 🎉');
-      navigate('/');
+      const fd = new FormData();
+      fd.append('role', role);
+      fd.append('name', fields.name);
+      fd.append('email', fields.email);
+      fd.append('phone', fields.phone);
+      fd.append('password', fields.password);
+
+      if (role === 'student') {
+        fd.append('studentId', fields.studentId);
+        fd.append('faculty', fields.faculty);
+        fd.append('year', fields.year);
+        fd.append('semester', fields.semester);
+      }
+      if (role === 'doctor') {
+        fd.append('nic', fields.nic);
+        fd.append('medicalRegNumber', fields.medicalRegNumber);
+        fd.append('specialization', fields.specialization);
+        fd.append('yearsOfExperience', fields.yearsOfExperience);
+        fd.append('hospitalName', fields.hospitalName);
+        if (medicalLicenseFile) fd.append('medicalLicenseFile', medicalLicenseFile);
+      }
+      if (role === 'shop_owner') {
+        fd.append('nic', fields.nic);
+        fd.append('shopName', fields.shopName);
+        fd.append('businessType', fields.businessType);
+        fd.append('shopAddress', fields.shopAddress);
+        if (businessLicenseFile) fd.append('businessLicenseFile', businessLicenseFile);
+      }
+
+      const result = await authRegister(fd);
+
+      if (result?.pending) {
+        toast.info('Registration submitted! You will be notified by email once approved. 📧', { autoClose: 6000 });
+        navigate('/login');
+      } else {
+        toast.success('Account created! Welcome to CareMate 🎉');
+        navigate('/');
+      }
     } catch (err) {
       const serverErrors = err.response?.data?.errors;
       if (serverErrors?.length > 0) {
-        serverErrors.forEach((e) => toast.error(`${e.message}`));
+        serverErrors.forEach((e) => toast.error(e.message));
       } else {
         toast.error(err.response?.data?.message || 'Registration failed. Please try again.');
       }
@@ -86,114 +165,201 @@ const Register = () => {
     }
   };
 
+  // ── UI ──────────────────────────────────────────────────────────────────────
+  const roleColors = {
+    student: 'from-blue-600 to-indigo-600',
+    doctor: 'from-emerald-600 to-teal-600',
+    shop_owner: 'from-orange-500 to-amber-500',
+  };
+  const roleLabels = { student: '🎓 Student', doctor: '🩺 Doctor', shop_owner: '🏪 Vendor (Shop Owner)' };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-indigo-50 px-4 py-10">
-      <div className="w-full max-w-lg">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-white to-blue-50 px-4 py-10">
+      <div className="w-full max-w-xl">
+
         {/* Header */}
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-2 text-blue-900 text-2xl font-bold">
-            🧩 CareMate
+            🩺 CareMate
           </Link>
           <h1 className="text-3xl font-extrabold text-gray-900 mt-3">Create your account</h1>
-          <p className="text-gray-500 text-sm mt-1">Student registration — join CareMate today</p>
+          <p className="text-gray-500 text-sm mt-1">Join CareMate — select your role to get started</p>
         </div>
 
         {/* Card */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
 
-            {/* Basic Info */}
-            <Field label="Full Name" error={errors.name}>
-              <input type="text" placeholder="e.g. Kasun Perera" className={inputClass(errors.name)} {...register('name')} />
-            </Field>
+          {/* Role Selector Tabs */}
+          <div className="grid grid-cols-3 border-b border-gray-100">
+            {['student', 'doctor', 'shop_owner'].map((r) => (
+              <button
+                key={r}
+                type="button"
+                onClick={() => { setRole(r); setErrors({}); }}
+                className={`py-4 px-2 text-xs font-semibold transition-all ${
+                  role === r
+                    ? `bg-gradient-to-r ${roleColors[r]} text-white`
+                    : 'bg-gray-50 text-gray-500 hover:bg-gray-100'
+                }`}
+              >
+                {roleLabels[r]}
+              </button>
+            ))}
+          </div>
 
-            <Field label="Email Address" error={errors.email}>
-              <input type="email" placeholder="you@university.edu" className={inputClass(errors.email)} {...register('email')} />
-            </Field>
 
-            <Field label="Phone Number" error={errors.phone}>
-              <input type="tel" placeholder="0712345678" className={inputClass(errors.phone)} {...register('phone')} />
-            </Field>
 
-            {/* Password */}
-            <Field label="Password" error={errors.password}>
-              <div className="relative">
-                <input
-                  type={showPw ? 'text' : 'password'}
-                  placeholder="Minimum 6 characters"
-                  className={inputClass(errors.password) + ' pr-12'}
-                  {...register('password')}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPw((v) => !v)}
-                  className="absolute right-3 top-3 text-gray-400 hover:text-gray-600 text-lg"
-                >
-                  {showPw ? '🙈' : '👁️'}
-                </button>
-              </div>
-            </Field>
+          <form onSubmit={onSubmit} className="p-8 space-y-5" encType="multipart/form-data">
 
-            <Field label="Confirm Password" error={errors.confirmPassword}>
-              <input
-                type={showPw ? 'text' : 'password'}
-                placeholder="Repeat your password"
-                className={inputClass(errors.confirmPassword)}
-                {...register('confirmPassword')}
-              />
-            </Field>
-
-            {/* Student Details */}
-            <div className="border-t border-gray-100 pt-5">
-              <p className="text-sm font-semibold text-blue-800 mb-4">🎓 Student Details</p>
-              <div className="space-y-4">
-
-                <Field label="Student ID" error={errors.studentId}>
-                  <input type="text" placeholder="e.g. IT22222222" className={inputClass(errors.studentId)} {...register('studentId')} />
-                </Field>
-
-                <Field label="Faculty" error={errors.faculty}>
-                  <select className={inputClass(errors.faculty)} {...register('faculty')}>
-                    <option value="">Select your faculty</option>
-                    <option value="Faculty of Computing">Faculty of Computing</option>
-                    <option value="Faculty of Engineering">Faculty of Engineering</option>
-                    <option value="Faculty of Business">Faculty of Business</option>
-                    <option value="Faculty of Medicine">Faculty of Medicine</option>
-                    <option value="Faculty of Science">Faculty of Science</option>
-                    <option value="Faculty of Arts">Faculty of Arts</option>
-                    <option value="Faculty of Law">Faculty of Law</option>
-                    <option value="Faculty of Education">Faculty of Education</option>
-                  </select>
-                </Field>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <Field label="Year" error={errors.year}>
-                    <input type="number" placeholder="e.g. 2" min="1" max="5" className={inputClass(errors.year)} {...register('year')} />
-                  </Field>
-                  <Field label="Semester" error={errors.semester}>
-                    <input type="number" placeholder="1 or 2" min="1" max="2" className={inputClass(errors.semester)} {...register('semester')} />
-                  </Field>
-                </div>
-
-              </div>
+            {/* ── Common Fields ── */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Field label="Full Name" error={errors.name} required>
+                <input type="text" placeholder="e.g. Kasun Perera" className={inputCls(errors.name)}
+                  value={fields.name} onChange={set('name')} />
+              </Field>
+              <Field label="Email Address" error={errors.email} required>
+                <input type="email" placeholder="you@example.com" className={inputCls(errors.email)}
+                  value={fields.email} onChange={set('email')} />
+              </Field>
             </div>
 
-            {/* Submit */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-blue-700 hover:bg-blue-800 text-white py-3 rounded-xl font-semibold transition-all disabled:opacity-60 disabled:cursor-not-allowed mt-2"
-            >
-              {loading ? 'Creating account...' : 'Create Account'}
-            </button>
-          </form>
+            <Field label="Phone Number" error={errors.phone} required>
+              <input type="tel" placeholder="0712345678 (10 digits)" className={inputCls(errors.phone)}
+                value={fields.phone} onChange={set('phone')} />
+            </Field>
 
-          <p className="text-center text-sm text-gray-500 mt-6">
-            Already have an account?{' '}
-            <Link to="/login" className="text-blue-700 font-semibold hover:underline">
-              Sign in
-            </Link>
-          </p>
+            {/* ── Password ── */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Field label="Password" error={errors.password} required>
+                <div className="relative">
+                  <input type={showPw ? 'text' : 'password'} placeholder="Min. 6 characters"
+                    className={inputCls(errors.password) + ' pr-10'} value={fields.password} onChange={set('password')} />
+                  <button type="button" onClick={() => setShowPw((v) => !v)}
+                    className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600 text-base">
+                    {showPw ? '🙈' : '👁️'}
+                  </button>
+                </div>
+              </Field>
+              <Field label="Confirm Password" error={errors.confirmPassword} required>
+                <input type={showPw ? 'text' : 'password'} placeholder="Repeat password"
+                  className={inputCls(errors.confirmPassword)} value={fields.confirmPassword} onChange={set('confirmPassword')} />
+              </Field>
+            </div>
+
+            <hr className="border-gray-100" />
+
+            {/* ── Student Fields ── */}
+            {role === 'student' && (
+              <div className="space-y-4">
+                <p className="text-sm font-semibold text-blue-700">🎓 Student Details</p>
+                <Field label="Student ID" error={errors.studentId} required>
+                  <input type="text" placeholder="e.g. IT22222222" className={inputCls(errors.studentId)}
+                    value={fields.studentId} onChange={set('studentId')} />
+                </Field>
+                <Field label="Faculty" error={errors.faculty} required>
+                  <select className={inputCls(errors.faculty)} value={fields.faculty} onChange={set('faculty')}>
+                    <option value="">Select your faculty</option>
+                    {FACULTIES.map((f) => <option key={f} value={f}>{f}</option>)}
+                  </select>
+                </Field>
+                <div className="grid grid-cols-2 gap-4">
+                  <Field label="Year" error={errors.year} required>
+                    <input type="number" placeholder="1–4" min="1" max="4" className={inputCls(errors.year)}
+                      value={fields.year} onChange={set('year')} />
+                  </Field>
+                  <Field label="Semester" error={errors.semester} required>
+                    <input type="number" placeholder="1 or 2" min="1" max="2" className={inputCls(errors.semester)}
+                      value={fields.semester} onChange={set('semester')} />
+                  </Field>
+                </div>
+              </div>
+            )}
+
+            {/* ── Doctor Fields ── */}
+            {role === 'doctor' && (
+              <div className="space-y-4">
+                <p className="text-sm font-semibold text-emerald-700">🩺 Doctor Details</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <Field label="NIC / ID Number" error={errors.nic} required>
+                    <input type="text" placeholder="e.g. 991234567V" className={inputCls(errors.nic)}
+                      value={fields.nic} onChange={set('nic')} />
+                  </Field>
+                  <Field label="Medical Reg. Number" error={errors.medicalRegNumber} required>
+                    <input type="text" placeholder="e.g. SLMC-12345" className={inputCls(errors.medicalRegNumber)}
+                      value={fields.medicalRegNumber} onChange={set('medicalRegNumber')} />
+                  </Field>
+                </div>
+                <Field label="Specialization" error={errors.specialization} required>
+                  <select className={inputCls(errors.specialization)} value={fields.specialization} onChange={set('specialization')}>
+                    <option value="">Select specialization</option>
+                    {SPECIALIZATIONS.map((s) => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </Field>
+                <div className="grid grid-cols-2 gap-4">
+                  <Field label="Years of Experience" error={errors.yearsOfExperience} required>
+                    <input type="number" placeholder="e.g. 5" min="0" className={inputCls(errors.yearsOfExperience)}
+                      value={fields.yearsOfExperience} onChange={set('yearsOfExperience')} />
+                  </Field>
+                  <Field label="Hospital / Clinic Name" error={errors.hospitalName} required>
+                    <input type="text" placeholder="e.g. Colombo General" className={inputCls(errors.hospitalName)}
+                      value={fields.hospitalName} onChange={set('hospitalName')} />
+                  </Field>
+                </div>
+                <Field label="Upload Medical License (PDF)" error={errors.medicalLicenseFile} required>
+                  <input type="file" accept=".pdf"
+                    className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer border border-gray-300 rounded-xl p-1"
+                    onChange={(e) => { setMedicalLicenseFile(e.target.files[0]); setErrors((p) => ({ ...p, medicalLicenseFile: '' })); }} />
+                  <p className="text-xs text-gray-400 mt-1">Max 5 MB · PDF only</p>
+                </Field>
+              </div>
+            )}
+
+            {/* ── Vendor / Shop Owner Fields ── */}
+            {role === 'shop_owner' && (
+              <div className="space-y-4">
+                <p className="text-sm font-semibold text-orange-600">🏪 Shop Owner Details</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <Field label="NIC" error={errors.nic} required>
+                    <input type="text" placeholder="e.g. 991234567V" className={inputCls(errors.nic)}
+                      value={fields.nic} onChange={set('nic')} />
+                  </Field>
+                  <Field label="Shop Name" error={errors.shopName} required>
+                    <input type="text" placeholder="e.g. MediPlus Pharmacy" className={inputCls(errors.shopName)}
+                      value={fields.shopName} onChange={set('shopName')} />
+                  </Field>
+                </div>
+                <Field label="Business Type" error={errors.businessType} required>
+                  <select className={inputCls(errors.businessType)} value={fields.businessType} onChange={set('businessType')}>
+                    <option value="">Select business type</option>
+                    <option value="pharmacy">Pharmacy</option>
+                    <option value="grocery">Grocery</option>
+                    <option value="other">Other</option>
+                  </select>
+                </Field>
+                <Field label="Shop Address" error={errors.shopAddress} required>
+                  <input type="text" placeholder="e.g. 25 Main Street, Colombo 07" className={inputCls(errors.shopAddress)}
+                    value={fields.shopAddress} onChange={set('shopAddress')} />
+                </Field>
+                <Field label="Upload Business License (PDF, optional)" error={errors.businessLicenseFile}>
+                  <input type="file" accept=".pdf"
+                    className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 cursor-pointer border border-gray-300 rounded-xl p-1"
+                    onChange={(e) => setBusinessLicenseFile(e.target.files[0])} />
+                  <p className="text-xs text-gray-400 mt-1">Max 5 MB · PDF only · Optional</p>
+                </Field>
+              </div>
+            )}
+
+            {/* Submit */}
+            <button type="submit" disabled={loading}
+              className={`w-full bg-gradient-to-r ${roleColors[role]} text-white py-3 rounded-xl font-semibold transition-all disabled:opacity-60 disabled:cursor-not-allowed mt-2 shadow-md hover:shadow-lg hover:scale-[1.01] active:scale-[0.99]`}>
+              {loading ? 'Submitting...' : role === 'student' ? 'Create Account' : 'Submit for Approval'}
+            </button>
+
+            <p className="text-center text-sm text-gray-500 mt-2">
+              Already have an account?{' '}
+              <Link to="/login" className="text-blue-700 font-semibold hover:underline">Sign in</Link>
+            </p>
+          </form>
         </div>
       </div>
     </div>

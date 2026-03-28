@@ -24,6 +24,7 @@ const Login = () => {
   const location = useLocation();
   const [loading, setLoading] = useState(false);
   const [showPw, setShowPw] = useState(false);
+  const [pendingUser, setPendingUser] = useState(null); // { name, role }
 
   const from = location.state?.from?.pathname || null;
 
@@ -35,8 +36,15 @@ const Login = () => {
 
   const onSubmit = async ({ email, password }) => {
     setLoading(true);
+    setPendingUser(null);
     try {
-      const redirectPath = await login(email, password);
+      const { redirectPath, user } = await login(email, password);
+
+      if (user?.status === 'pending') {
+        setPendingUser({ name: user.name, role: user.role });
+        return; // Stay on page, show banner
+      }
+
       toast.success('Welcome back! 👋');
       navigate(from || redirectPath);
     } catch (err) {
@@ -52,6 +60,11 @@ const Login = () => {
     }
   };
 
+  const roleLabel = {
+    doctor: 'Doctor',
+    shop_owner: 'Vendor (Shop Owner)',
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-indigo-50 px-4">
       <div className="w-full max-w-md">
@@ -59,11 +72,31 @@ const Login = () => {
         {/* Header */}
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-2 text-blue-900 text-2xl font-bold">
-            🧩 CareMate
+            🩺 CareMate
           </Link>
           <h1 className="text-3xl font-extrabold text-gray-900 mt-3">Welcome back</h1>
           <p className="text-gray-500 text-sm mt-1">Sign in to continue to CareMate</p>
         </div>
+
+        {/* Pending Approval Banner */}
+        {pendingUser && (
+          <div className="mb-6 bg-amber-50 border border-amber-300 rounded-2xl p-5 shadow-sm">
+            <div className="flex items-start gap-3">
+              <span className="text-2xl mt-0.5">⏳</span>
+              <div>
+                <h3 className="font-semibold text-amber-800 text-base">Account Pending Approval</h3>
+                <p className="text-amber-700 text-sm mt-1 leading-relaxed">
+                  Hi <strong>{pendingUser.name}</strong>, your{' '}
+                  <strong>{roleLabel[pendingUser.role] || pendingUser.role}</strong> account is currently
+                  under review. Our admin team will approve it shortly.
+                </p>
+                <p className="text-amber-600 text-xs mt-2">
+                  📧 You will receive an email notification once your account is approved.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Card */}
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
@@ -118,7 +151,7 @@ const Login = () => {
           </form>
 
           <p className="text-center text-sm text-gray-500 mt-6">
-            Don't have an account?{' '}
+            Don&apos;t have an account?{' '}
             <Link to="/register" className="text-blue-700 font-semibold hover:underline">
               Create one
             </Link>

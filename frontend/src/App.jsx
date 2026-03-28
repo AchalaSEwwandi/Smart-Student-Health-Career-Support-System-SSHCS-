@@ -28,6 +28,10 @@ import StudentProfile from './pages/student/Profile';
 // Shared pages
 import PublicProfile from './pages/shared/PublicProfile';
 
+// Admin pages
+import AdminDashboard from './pages/admin/Dashboard';
+import AdminUsers from './pages/admin/Users';
+
 const HomePage = () => (
   <div className="min-h-screen bg-white">
     <HeroSection />
@@ -76,9 +80,13 @@ const AppContent = () => {
               <Route path="/shop/dashboard" element={<ProtectedRoute roles={['shop_owner']}><StudentProfile /></ProtectedRoute>} />
               <Route path="/delivery/dashboard" element={<ProtectedRoute roles={['delivery_person']}><StudentProfile /></ProtectedRoute>} />
 
+              {/* Admin */}
+              <Route path="/admin/dashboard" element={<ProtectedRoute roles={['admin']}><AdminDashboard /></ProtectedRoute>} />
+              <Route path="/admin/users" element={<ProtectedRoute roles={['admin']}><AdminUsers /></ProtectedRoute>} />
+
         </Routes>
       </main>
-      {isAdminRoute ? <AdminFooter /> : <Footer />}
+      <Footer />
     </div>
   );
 };

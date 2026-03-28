@@ -32,6 +32,13 @@ const userSchema = new mongoose.Schema(
       default: 'student',
     },
 
+    // ── Approval Status ─────────────────────────────
+    status: {
+      type: String,
+      enum: ['pending', 'approved'],
+      default: 'approved', // overridden in controller for doctor/shop_owner
+    },
+
     phone: {
       type: String,
       trim: true,
@@ -57,31 +64,42 @@ const userSchema = new mongoose.Schema(
       default: 0,
     },
 
-    // ── Student-specific fields ──
+    // ── Student-specific fields ──────────────────────
     studentId: { type: String },
-    year: { type: Number, min: 1, max: 5 },
-    semester: { type: Number, min: 1, max: 2 },
-    faculty: { type: String },
+    year:      { type: Number, min: 1, max: 4 },
+    semester:  { type: Number, min: 1, max: 2 },
+    faculty:   { type: String },
 
-    // ───────── DOCTOR ─────────
-    licenseNumber: { type: String },
+    // ── Doctor-specific fields ───────────────────────
+    nic:                  { type: String },
+    medicalRegNumber:     { type: String },
+    specialization:       { type: String },
+    yearsOfExperience:    { type: Number },
+    hospitalName:         { type: String },
+    medicalLicenseFile:   { type: String }, // stored file path
+    licenseNumber:        { type: String }, // legacy alias kept
     availableSlots: [
       {
-        day: String,
+        day:       String,
         startTime: String,
-        endTime: String,
+        endTime:   String,
       },
     ],
 
-    // ───────── SHOP OWNER ─────────
-    shopName: { type: String },
-    shopType: {
+    // ── Shop Owner-specific fields ───────────────────
+    shopName:            { type: String },
+    businessType: {
       type: String,
-      enum: ['pharmacy', 'grocery'],
+      enum: ['pharmacy', 'grocery', 'other'],
     },
-    shopAddress: { type: String },
+    shopType: {              // legacy alias kept
+      type: String,
+      enum: ['pharmacy', 'grocery', 'other'],
+    },
+    shopAddress:         { type: String },
+    businessLicenseFile: { type: String }, // stored file path (optional)
 
-    // ───────── DELIVERY ─────────
+    // ── Delivery-specific fields ─────────────────────
     vehicleType: {
       type: String,
       enum: ['bike', 'car', 'walk'],
@@ -93,22 +111,18 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-
 // 🔐 HASH PASSWORD
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
-
   const salt = await bcrypt.genSalt(12);
   this.password = await bcrypt.hash(this.password, salt);
   next();
 });
 
-
 // 🔍 COMPARE PASSWORD
 userSchema.methods.comparePassword = async function (enteredPassword) {
   return bcrypt.compare(enteredPassword, this.password);
 };
-
 
 // ❗ REMOVE SENSITIVE DATA WHEN SENDING RESPONSE
 userSchema.methods.toJSON = function () {
