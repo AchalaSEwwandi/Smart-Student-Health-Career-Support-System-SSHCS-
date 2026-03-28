@@ -14,6 +14,7 @@ import FeaturesSection from './components/FeaturesSection'
 import HowItWorksSection from './components/HowItWorksSection'
 import CTASection from './components/CTASection'
 import Footer from './components/Footer'
+import AdminFooter from './components/AdminFooter'
 
 // Auth pages
 import Login from './pages/auth/Login';
@@ -27,10 +28,12 @@ import StudentProfile from './pages/student/Profile';
 
 // Shared pages
 import PublicProfile from './pages/shared/PublicProfile';
+import Contact from './pages/shared/Contact';
 
 // Admin pages
 import AdminDashboard from './pages/admin/Dashboard';
 import AdminUsers from './pages/admin/Users';
+import AdminMessages from './pages/admin/Messages';
 
 const HomePage = () => (
   <div className="min-h-screen bg-white">
@@ -70,6 +73,7 @@ const AppContent = () => {
               <Route path="/verify-otp" element={<VerifyOTP />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/profile/:id" element={<PublicProfile />} />
+              <Route path="/contact" element={<Contact />} />
               <Route path="/unauthorized" element={<Unauthorized />} />
 
               {/* Shared protected */}
@@ -83,10 +87,11 @@ const AppContent = () => {
               {/* Admin */}
               <Route path="/admin/dashboard" element={<ProtectedRoute roles={['admin']}><AdminDashboard /></ProtectedRoute>} />
               <Route path="/admin/users" element={<ProtectedRoute roles={['admin']}><AdminUsers /></ProtectedRoute>} />
+              <Route path="/admin/messages" element={<ProtectedRoute roles={['admin']}><AdminMessages /></ProtectedRoute>} />
 
         </Routes>
       </main>
-      <Footer />
+      {isAdminRoute ? <AdminFooter /> : <Footer />}
     </div>
   );
 };

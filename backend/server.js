@@ -9,6 +9,7 @@ const errorHandler = require('./middleware/errorHandler');
 
 const authRoutes  = require('./routes/authRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const contactRoutes = require('./routes/contactRoutes');
 
 const app = express();
 
@@ -27,6 +28,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // ── Routes ──────────────────────────────────────────────────────────────────
 app.use('/api/auth',  authRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/contact', contactRoutes);
 
 // ── Error Handler ───────────────────────────────────────────────────────────
 app.use(errorHandler);

@@ -16,7 +16,7 @@ const NAV_LINKS = [
   { to: '/#delivery', label: 'Delivery' },
   { to: '/#ai', label: 'AI Assistant' },
   { to: '/#about', label: 'About' },
-  { to: '/#contact', label: 'Contact' },
+  { to: '/contact', label: 'Contact' },
 ];
 
 const Navbar = () => {
@@ -85,6 +85,7 @@ const Navbar = () => {
                 {role === 'admin' && (
                   <>
                     <Link to="/admin/users" className="text-white/80 hover:text-white text-sm">Users</Link>
+                    <Link to="/admin/messages" className="text-white/80 hover:text-white text-sm">Messages</Link>
                     <Link to="/admin/complaints" className="text-white/80 hover:text-white text-sm">Complaints</Link>
                     <Link to="/admin/sentiment" className="text-white/80 hover:text-white text-sm">Analytics</Link>
                   </>

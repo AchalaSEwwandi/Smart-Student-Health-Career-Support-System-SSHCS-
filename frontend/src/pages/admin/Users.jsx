@@ -25,6 +25,7 @@ const AdminUsers = () => {
   const [users, setUsers]       = useState([]);
   const [loading, setLoading]   = useState(true);
   const [actionId, setActionId] = useState(null); // loading state per row
+  const [searchQuery, setSearchQuery] = useState('');
 
   const filterStatus = searchParams.get('status') || '';
   const filterRole   = searchParams.get('role')   || '';
@@ -81,6 +82,11 @@ const AdminUsers = () => {
 
   const pendingCount = users.filter((u) => u.status === 'pending').length;
 
+  const filteredUsers = users.filter(u => 
+    u.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    u.email.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -112,9 +118,22 @@ const AdminUsers = () => {
           </div>
         )}
 
-        {/* Filters */}
+        {/* Filters & Search */}
         <div className="bg-white rounded-2xl shadow-sm p-4 flex flex-wrap gap-3 items-center">
-          <span className="text-sm font-medium text-gray-600 mr-1">Filter:</span>
+          
+          {/* Search Bar */}
+          <div className="relative flex-1 min-w-[200px] max-w-sm">
+            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">🔍</span>
+            <input 
+              type="text" 
+              placeholder="Search by name or email..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition"
+            />
+          </div>
+
+          <div className="h-6 w-px bg-gray-200 mx-2 hidden md:block" />
 
           {/* Status */}
           {['', 'pending', 'approved'].map((s) => (
@@ -147,7 +166,7 @@ const AdminUsers = () => {
             </button>
           ))}
 
-          <button onClick={() => { setSearchParams({}); }}
+          <button onClick={() => { setSearchParams({}); setSearchQuery(''); }}
             className="ml-auto text-xs text-gray-400 hover:text-gray-600 underline">
             Clear filters
           </button>
@@ -159,11 +178,11 @@ const AdminUsers = () => {
             <div className="flex justify-center py-20">
               <div className="w-10 h-10 border-4 border-blue-700 border-t-transparent rounded-full animate-spin" />
             </div>
-          ) : users.length === 0 ? (
+          ) : filteredUsers.length === 0 ? (
             <div className="text-center py-20 text-gray-400">
               <p className="text-5xl mb-3">🔍</p>
               <p className="text-lg font-medium">No users found</p>
-              <p className="text-sm mt-1">Try adjusting your filters</p>
+              <p className="text-sm mt-1">Try adjusting your filters or search query</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -178,7 +197,7 @@ const AdminUsers = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
-                  {users.map((u) => (
+                  {filteredUsers.map((u) => (
                     <tr key={u._id} className={`hover:bg-gray-50 transition ${u.status === 'pending' ? 'bg-amber-50/40' : ''}`}>
                       {/* Name */}
                       <td className="px-5 py-4 font-medium text-gray-800 whitespace-nowrap">
@@ -254,7 +273,7 @@ const AdminUsers = () => {
           )}
         </div>
 
-        <p className="text-xs text-gray-400 text-right">{users.length} user{users.length !== 1 ? 's' : ''} shown</p>
+        <p className="text-xs text-gray-400 text-right">{filteredUsers.length} user{filteredUsers.length !== 1 ? 's' : ''} shown</p>
       </div>
     </div>
   );
