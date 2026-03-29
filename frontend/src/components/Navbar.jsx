@@ -1,97 +1,214 @@
-import { useState } from 'react';
+import { useState, Fragment } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import useAuth from '../hooks/useAuth';
 
-const navLinks = [
-  { name: 'Home', href: '#home' },
-  { name: 'Health Services', href: '#services' },
-  { name: 'Delivery', href: '#grocery' },
-  { name: 'AI Assistant', href: '#services' },
-  { name: 'About', href: '#features' },
-  { name: 'Contact', href: '#footer' },
+const DASHBOARD_LINKS = {
+  student: '/student/dashboard',
+  doctor: '/doctor/dashboard',
+  shop_owner: '/shop/dashboard',
+  delivery_person: '/delivery/dashboard',
+  admin: '/admin/dashboard',
+};
+
+const NAV_LINKS = [
+  { to: '/', label: 'Home' },
+  { to: '/#services', label: 'Health Services' },
+  { to: '/#delivery', label: 'Delivery' },
+  { to: '/#ai', label: 'AI Assistant' },
+  { to: '/#about', label: 'About' },
+  { to: '/contact', label: 'Contact' },
 ];
 
-export default function Navbar() {
+const Navbar = () => {
+  const { isAuthenticated, user, role, logout } = useAuth();
+  const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
+  };
+
+  const dashboardPath = DASHBOARD_LINKS[role] || '/';
+
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-primary shadow-lg shadow-primary/20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 md:h-18">
+    <nav className="sticky top-0 z-50 bg-gradient-to-r from-[#1e3a8a] to-[#3b82f6] shadow-lg">
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="flex justify-between items-center h-16">
+
           {/* Logo */}
-          <a href="#home" className="flex items-center gap-2 group">
-            <div className="w-9 h-9 bg-accent rounded-xl flex items-center justify-center shadow-lg shadow-accent/30 group-hover:scale-110 transition-transform duration-300">
-              <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-              </svg>
+          <Link to="/" className="flex items-center gap-2">
+            <div className="w-9 h-9 rounded-full bg-green-500 flex items-center justify-center">
+              <span className="text-white text-lg">❤</span>
             </div>
-            <span className="text-xl font-bold text-white tracking-tight">
-              Care<span className="text-accent-light">Mate</span>
+            <span className="text-white text-lg font-bold">
+              Care<span className="text-green-400">Mate</span>
             </span>
-          </a>
+          </Link>
 
           {/* Desktop Links */}
-          <div className="hidden md:flex items-center gap-1">
-            {navLinks.map((link) => (
-              <a
-                key={link.name}
-                href={link.href}
-                className="px-4 py-2 text-sm font-medium text-blue-100 hover:text-white rounded-lg hover:bg-white/10 transition-all duration-200"
-              >
-                {link.name}
-              </a>
-            ))}
-            <a
-              href="#cta"
-              className="ml-3 px-5 py-2 text-sm font-semibold bg-accent text-white rounded-full shadow-lg shadow-accent/30 hover:bg-accent-dark hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5"
-            >
-              Login
-            </a>
+          <div className="hidden md:flex items-center gap-6">
+            {(!isAuthenticated || role === 'student') ? (
+              <>
+                {NAV_LINKS.map(({ to, label }) => (
+                  <Fragment key={label}>
+                    <Link
+                      to={to}
+                      className="text-white/80 hover:text-white text-sm font-medium transition"
+                    >
+                      {label}
+                    </Link>
+                    {/* Inject Dropdown after AI Assistant for authenticated students */}
+                    {label === 'AI Assistant' && isAuthenticated && role === 'student' && (
+                      <div className="relative group">
+                        <button className="text-white/80 hover:text-white text-sm font-medium transition flex items-center gap-1 focus:outline-none focus:ring-0 cursor-pointer pb-2 -mb-2">
+                          My Dashboard <span className="text-[10px]">▼</span>
+                        </button>
+                        <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
+                          <div className="bg-white rounded-xl shadow-xl w-48 py-2 border border-gray-100 flex flex-col items-center">
+                            <Link to="/student/dashboard" className="w-full text-center px-4 py-2 text-sm text-gray-700 hover:bg-h-50 hover:text-blue-600 transition">Dashboard</Link>
+                            <Link to="/student/complaints" className="w-full text-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-blue-600 transition">Complaints</Link>
+                            <Link to="/student/top-rated" className="w-full text-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-blue-600 transition">Top Rated</Link>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </Fragment>
+                ))}
+              </>
+            ) : (
+              <>
+                <Link to={dashboardPath} className="text-white/80 hover:text-white text-sm">
+                  Dashboard
+                </Link>
+
+                {role === 'admin' && (
+                  <>
+                    <Link to="/admin/users" className="text-white/80 hover:text-white text-sm">Users</Link>
+                    <Link to="/admin/messages" className="text-white/80 hover:text-white text-sm">Messages</Link>
+                    <Link to="/admin/complaints" className="text-white/80 hover:text-white text-sm">Complaints</Link>
+                    <Link to="/admin/sentiment" className="text-white/80 hover:text-white text-sm">Analytics</Link>
+                  </>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* Desktop Right Side */}
+          <div className="hidden md:flex items-center gap-3">
+            {!isAuthenticated ? (
+              <>
+                {/* Login */}
+                <Link
+                  to="/login"
+                  className="px-5 py-2 bg-green-500 text-white text-sm font-semibold rounded-full hover:bg-green-600 transition"
+                >
+                  Login
+                </Link>
+
+                {/* Register */}
+                <Link
+                  to="/register"
+                  className="px-5 py-2 border border-green-400 text-green-400 rounded-full text-sm font-semibold hover:bg-green-400 hover:text-white transition"
+                >
+                  Register
+                </Link>
+              </>
+            ) : (
+              <div className="flex items-center gap-3">
+                {/* Avatar */}
+                <Link to="/profile" className="flex items-center gap-2">
+                  {user?.avatar ? (
+                    <img
+                      src={`http://localhost:5000${user.avatar}`}
+                      alt={user.name}
+                      className="w-8 h-8 rounded-full object-cover border-2 border-green-400"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-white text-sm font-bold">
+                      {user?.name?.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <span className="text-sm text-white">{user?.name}</span>
+                </Link>
+
+                {/* Logout */}
+                <button
+                  onClick={handleLogout}
+                  className="px-4 py-2 bg-red-500 text-white text-sm rounded-full hover:bg-red-600 transition"
+                >
+                  Logout
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Mobile Toggle */}
           <button
+            className="md:hidden text-white text-xl"
             onClick={() => setMobileOpen(!mobileOpen)}
-            className="md:hidden p-2 rounded-lg text-white hover:bg-white/10 transition-colors"
-            aria-label="Toggle menu"
           >
-            {mobileOpen ? (
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            ) : (
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            )}
+            {mobileOpen ? '✕' : '☰'}
           </button>
         </div>
-      </div>
 
-      {/* Mobile Menu */}
-      <div
-        className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${
-          mobileOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
-        }`}
-      >
-        <div className="px-4 pb-4 space-y-1 bg-primary-dark/50 backdrop-blur-sm">
-          {navLinks.map((link) => (
-            <a
-              key={link.name}
-              href={link.href}
-              onClick={() => setMobileOpen(false)}
-              className="block px-4 py-2.5 text-sm font-medium text-blue-100 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-200"
-            >
-              {link.name}
-            </a>
-          ))}
-          <a
-            href="#cta"
-            onClick={() => setMobileOpen(false)}
-            className="block text-center mt-2 px-5 py-2.5 text-sm font-semibold bg-accent text-white rounded-full shadow-lg shadow-accent/30"
-          >
-            Login
-          </a>
-        </div>
+        {/* Mobile Menu */}
+        {mobileOpen && (
+          <div className="md:hidden py-4 space-y-2">
+            {(!isAuthenticated || role === 'student') ? (
+              <>
+                {NAV_LINKS.map(({ to, label }) => (
+                  <Fragment key={label}>
+                    <Link
+                      to={to}
+                      onClick={() => setMobileOpen(false)}
+                      className="block text-white/80 hover:text-white py-2"
+                    >
+                      {label}
+                    </Link>
+                    {label === 'AI Assistant' && isAuthenticated && role === 'student' && (
+                      <div className="pl-4 border-l-2 border-white/20 my-2 space-y-2">
+                        <Link to="/student/dashboard" onClick={() => setMobileOpen(false)} className="block text-white/70 hover:text-white text-sm py-1">➔ Dashboard</Link>
+                        <Link to="/student/complaints" onClick={() => setMobileOpen(false)} className="block text-white/70 hover:text-white text-sm py-1">➔ Complaints</Link>
+                        <Link to="/student/top-rated" onClick={() => setMobileOpen(false)} className="block text-white/70 hover:text-white text-sm py-1">➔ Top Rated</Link>
+                      </div>
+                    )}
+                  </Fragment>
+                ))}
+
+                {!isAuthenticated ? (
+                  <>
+                    <Link to="/login" className="block text-center mt-2 bg-green-500 text-white py-2 rounded-full">
+                      Login
+                    </Link>
+                    <Link to="/register" className="block text-center border border-green-400 text-green-400 py-2 mt-2 rounded-full">
+                      Register
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    <Link to="/profile" onClick={() => setMobileOpen(false)} className="block text-white/80 hover:text-white py-2">Profile</Link>
+                    <button onClick={handleLogout} className="block text-red-400 py-2 w-full text-left">
+                      Logout
+                    </button>
+                  </>
+                )}
+              </>
+            ) : (
+              <>
+                <Link to={dashboardPath} onClick={() => setMobileOpen(false)} className="block text-white py-2">Dashboard</Link>
+                <Link to="/profile" onClick={() => setMobileOpen(false)} className="block text-white py-2">Profile</Link>
+
+                <button onClick={handleLogout} className="block text-red-400 py-2 w-full text-left">
+                  Logout
+                </button>
+              </>
+            )}
+          </div>
+        )}
       </div>
     </nav>
   );
-}
+};
+
+export default Navbar;
