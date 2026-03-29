@@ -202,6 +202,30 @@ const changePassword = async (req, res, next) => {
   }
 };
 
+/**
+ * GET PUBLIC PROFILE (FOR STUDENTS TO VIEW VENDORS)
+ */
+const getPublicProfile = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.params.id).select('-password');
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: user
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getProfile,
   getPublicProfile,
