@@ -11,6 +11,14 @@ const ROLE_REDIRECTS = {
   admin:           '/admin/dashboard',
 };
 
+const getRedirectPath = (userData) => {
+  if (userData?.role === 'shop_owner') {
+    if (userData.businessType === 'grocery') return '/grocery/dashboard';
+    if (userData.businessType === 'pharmacy') return '/pharmacy/dashboard';
+  }
+  return ROLE_REDIRECTS[userData?.role] || '/';
+};
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser]       = useState(null);
   const [token, setToken]     = useState(localStorage.getItem('accessToken'));
@@ -45,7 +53,7 @@ export const AuthProvider = ({ children }) => {
     setUser(userData);
 
     return {
-      redirectPath: ROLE_REDIRECTS[userData.role] || '/',
+      redirectPath: getRedirectPath(userData),
       user: userData,
     };
   }, []);
@@ -75,7 +83,7 @@ export const AuthProvider = ({ children }) => {
 
     return {
       pending: false,
-      redirectPath: ROLE_REDIRECTS[userData.role] || '/',
+      redirectPath: getRedirectPath(userData),
     };
   }, []);
 

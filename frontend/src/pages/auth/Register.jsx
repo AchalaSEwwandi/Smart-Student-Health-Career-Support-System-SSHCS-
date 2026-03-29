@@ -97,10 +97,9 @@ const Register = () => {
       if (!medicalLicenseFile) errs.medicalLicenseFile = 'Medical license PDF is required';
     }
 
-    if (role === 'shop_owner') {
+    if (role === 'grocery' || role === 'pharmacy') {
       if (!fields.nic.trim()) errs.nic = 'NIC is required';
       if (!fields.shopName.trim()) errs.shopName = 'Shop name is required';
-      if (!fields.businessType) errs.businessType = 'Business type is required';
       if (!fields.shopAddress.trim()) errs.shopAddress = 'Shop address is required';
     }
 
@@ -116,7 +115,11 @@ const Register = () => {
     setLoading(true);
     try {
       const fd = new FormData();
-      fd.append('role', role);
+      if (role === 'grocery' || role === 'pharmacy') {
+        fd.append('role', 'shop_owner');
+      } else {
+        fd.append('role', role);
+      }
       fd.append('name', fields.name);
       fd.append('email', fields.email);
       fd.append('phone', fields.phone);
@@ -136,10 +139,10 @@ const Register = () => {
         fd.append('hospitalName', fields.hospitalName);
         if (medicalLicenseFile) fd.append('medicalLicenseFile', medicalLicenseFile);
       }
-      if (role === 'shop_owner') {
+      if (role === 'grocery' || role === 'pharmacy') {
         fd.append('nic', fields.nic);
         fd.append('shopName', fields.shopName);
-        fd.append('businessType', fields.businessType);
+        fd.append('businessType', role);
         fd.append('shopAddress', fields.shopAddress);
         if (businessLicenseFile) fd.append('businessLicenseFile', businessLicenseFile);
       }
@@ -169,9 +172,10 @@ const Register = () => {
   const roleColors = {
     student: 'from-blue-600 to-indigo-600',
     doctor: 'from-emerald-600 to-teal-600',
-    shop_owner: 'from-orange-500 to-amber-500',
+    grocery: 'from-orange-500 to-amber-500',
+    pharmacy: 'from-purple-500 to-pink-500',
   };
-  const roleLabels = { student: '🎓 Student', doctor: '🩺 Doctor', shop_owner: '🏪 Vendor (Shop Owner)' };
+  const roleLabels = { student: '🎓 Student', doctor: '🩺 Doctor', grocery: '🛒 Grocery', pharmacy: '🏥 Pharmacy' };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-white to-blue-50 px-4 py-10">
@@ -190,8 +194,8 @@ const Register = () => {
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
 
           {/* Role Selector Tabs */}
-          <div className="grid grid-cols-3 border-b border-gray-100">
-            {['student', 'doctor', 'shop_owner'].map((r) => (
+          <div className="grid grid-cols-4 border-b border-gray-100">
+            {['student', 'doctor', 'grocery', 'pharmacy'].map((r) => (
               <button
                 key={r}
                 type="button"
@@ -314,35 +318,29 @@ const Register = () => {
               </div>
             )}
 
-            {/* ── Vendor / Shop Owner Fields ── */}
-            {role === 'shop_owner' && (
+            {/* ── Grocery / Pharmacy Fields ── */}
+            {(role === 'grocery' || role === 'pharmacy') && (
               <div className="space-y-4">
-                <p className="text-sm font-semibold text-orange-600">🏪 Shop Owner Details</p>
+                <p className={`text-sm font-semibold ${role === 'grocery' ? 'text-orange-600' : 'text-purple-600'}`}>
+                  {role === 'grocery' ? '🛒 Grocery Owner Details' : '🏥 Pharmacy Owner Details'}
+                </p>
                 <div className="grid grid-cols-2 gap-4">
                   <Field label="NIC" error={errors.nic} required>
                     <input type="text" placeholder="e.g. 991234567V" className={inputCls(errors.nic)}
                       value={fields.nic} onChange={set('nic')} />
                   </Field>
                   <Field label="Shop Name" error={errors.shopName} required>
-                    <input type="text" placeholder="e.g. MediPlus Pharmacy" className={inputCls(errors.shopName)}
+                    <input type="text" placeholder={role === 'grocery' ? 'e.g. Super Mart' : 'e.g. MediPlus Pharmacy'} className={inputCls(errors.shopName)}
                       value={fields.shopName} onChange={set('shopName')} />
                   </Field>
                 </div>
-                <Field label="Business Type" error={errors.businessType} required>
-                  <select className={inputCls(errors.businessType)} value={fields.businessType} onChange={set('businessType')}>
-                    <option value="">Select business type</option>
-                    <option value="pharmacy">Pharmacy</option>
-                    <option value="grocery">Grocery</option>
-                    <option value="other">Other</option>
-                  </select>
-                </Field>
                 <Field label="Shop Address" error={errors.shopAddress} required>
                   <input type="text" placeholder="e.g. 25 Main Street, Colombo 07" className={inputCls(errors.shopAddress)}
                     value={fields.shopAddress} onChange={set('shopAddress')} />
                 </Field>
                 <Field label="Upload Business License (PDF, optional)" error={errors.businessLicenseFile}>
                   <input type="file" accept=".pdf"
-                    className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 cursor-pointer border border-gray-300 rounded-xl p-1"
+                    className={`w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium ${role === 'grocery' ? 'file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100' : 'file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100'} cursor-pointer border border-gray-300 rounded-xl p-1`}
                     onChange={(e) => setBusinessLicenseFile(e.target.files[0])} />
                   <p className="text-xs text-gray-400 mt-1">Max 5 MB · PDF only · Optional</p>
                 </Field>

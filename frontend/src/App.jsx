@@ -81,7 +81,8 @@ const AppContent = () => {
 
               {/* Doctor / shop / delivery dashboards (placeholder redirects) */}
               <Route path="/doctor/dashboard" element={<ProtectedRoute roles={['doctor']}><StudentProfile /></ProtectedRoute>} />
-              <Route path="/shop/dashboard" element={<ProtectedRoute roles={['shop_owner']}><StudentProfile /></ProtectedRoute>} />
+              <Route path="/grocery/dashboard" element={<ProtectedRoute roles={['shop_owner']}><StudentProfile /></ProtectedRoute>} />
+              <Route path="/pharmacy/dashboard" element={<ProtectedRoute roles={['shop_owner']}><StudentProfile /></ProtectedRoute>} />
               <Route path="/delivery/dashboard" element={<ProtectedRoute roles={['delivery_person']}><StudentProfile /></ProtectedRoute>} />
 
               {/* Admin */}
