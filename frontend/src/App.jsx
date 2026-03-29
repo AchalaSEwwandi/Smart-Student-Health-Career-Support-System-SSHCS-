@@ -25,10 +25,13 @@ import ResetPassword from './pages/auth/ResetPassword';
 
 // Student pages
 import StudentProfile from './pages/student/Profile';
+import MessageForm from './pages/student/MessageForm';
+import MyMessages from './pages/student/MyMessages';
 
 // Shared pages
 import PublicProfile from './pages/shared/PublicProfile';
 import Contact from './pages/shared/Contact';
+import VendorMessages from './pages/shared/VendorMessages';
 
 // Admin pages
 import AdminDashboard from './pages/admin/Dashboard';
@@ -78,6 +81,11 @@ const AppContent = () => {
 
               {/* Shared protected */}
               <Route path="/profile" element={<ProtectedRoute><StudentProfile /></ProtectedRoute>} />
+
+              {/* Messages */}
+              <Route path="/messages/new" element={<ProtectedRoute roles={['student']}><MessageForm /></ProtectedRoute>} />
+              <Route path="/messages/my" element={<ProtectedRoute roles={['student']}><MyMessages /></ProtectedRoute>} />
+              <Route path="/vendor/messages" element={<ProtectedRoute roles={['doctor', 'shop_owner']}><VendorMessages /></ProtectedRoute>} />
 
               {/* Doctor / shop / delivery dashboards (placeholder redirects) */}
               <Route path="/doctor/dashboard" element={<ProtectedRoute roles={['doctor']}><StudentProfile /></ProtectedRoute>} />

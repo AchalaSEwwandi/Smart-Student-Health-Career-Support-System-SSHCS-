@@ -66,8 +66,8 @@ const Navbar = () => {
                         </button>
                         <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
                           <div className="bg-white rounded-xl shadow-xl w-48 py-2 border border-gray-100 flex flex-col items-center">
-                            <Link to="/student/dashboard" className="w-full text-center px-4 py-2 text-sm text-gray-700 hover:bg-h-50 hover:text-blue-600 transition">Dashboard</Link>
-                            <Link to="/student/complaints" className="w-full text-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-blue-600 transition">Complaints</Link>
+                            <Link to="/profile" className="w-full text-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-blue-600 transition">Dashboard</Link>
+                            <Link to="/messages/my" className="w-full text-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-blue-600 transition">Messages</Link>
                             <Link to="/student/top-rated" className="w-full text-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-blue-600 transition">Top Rated</Link>
                           </div>
                         </div>
@@ -86,7 +86,6 @@ const Navbar = () => {
                   <>
                     <Link to="/admin/users" className="text-white/80 hover:text-white text-sm">Users</Link>
                     <Link to="/admin/messages" className="text-white/80 hover:text-white text-sm">Messages</Link>
-                    <Link to="/admin/complaints" className="text-white/80 hover:text-white text-sm">Complaints</Link>
                     <Link to="/admin/sentiment" className="text-white/80 hover:text-white text-sm">Analytics</Link>
                   </>
                 )}
@@ -168,8 +167,8 @@ const Navbar = () => {
                     </Link>
                     {label === 'AI Assistant' && isAuthenticated && role === 'student' && (
                       <div className="pl-4 border-l-2 border-white/20 my-2 space-y-2">
-                        <Link to="/student/dashboard" onClick={() => setMobileOpen(false)} className="block text-white/70 hover:text-white text-sm py-1">➔ Dashboard</Link>
-                        <Link to="/student/complaints" onClick={() => setMobileOpen(false)} className="block text-white/70 hover:text-white text-sm py-1">➔ Complaints</Link>
+                        <Link to="/profile" onClick={() => setMobileOpen(false)} className="block text-white/70 hover:text-white text-sm py-1">➔ Dashboard</Link>
+                        <Link to="/messages/my" onClick={() => setMobileOpen(false)} className="block text-white/70 hover:text-white text-sm py-1">➔ Messages</Link>
                         <Link to="/student/top-rated" onClick={() => setMobileOpen(false)} className="block text-white/70 hover:text-white text-sm py-1">➔ Top Rated</Link>
                       </div>
                     )}

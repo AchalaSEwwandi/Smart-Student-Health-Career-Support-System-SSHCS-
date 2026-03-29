@@ -204,6 +204,7 @@ const changePassword = async (req, res, next) => {
 
 module.exports = {
   getProfile,
+  getPublicProfile,
   updateProfile,
   uploadAvatar,
   changePassword

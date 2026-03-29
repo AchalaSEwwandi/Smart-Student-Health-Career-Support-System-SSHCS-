@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import useAuth from '../../hooks/useAuth';
 import api from '../../services/api';
@@ -96,9 +97,23 @@ const Profile = () => {
             <div>
               <h2 className="text-xl font-bold text-gray-800">{user?.name}</h2>
               <p className="text-gray-500">{user?.email}</p>
-              <span className={`mt-2 inline-block px-3 py-1 text-xs font-semibold rounded-full ${user?.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                {user?.isActive ? '✅ Active' : '❌ Inactive'}
-              </span>
+              <div className="flex items-center gap-3 mt-2">
+                <span className={`inline-block px-3 py-1 text-xs font-semibold rounded-full ${user?.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                  {user?.isActive ? '✅ Active' : '❌ Inactive'}
+                </span>
+                
+                {user?.role === 'student' && (
+                  <Link to="/messages/my" className="text-xs font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100 px-3 py-1 rounded-full border border-blue-200 transition-colors">
+                    ✉️ My Messages
+                  </Link>
+                )}
+                
+                {['doctor', 'shop_owner'].includes(user?.role) && (
+                  <Link to="/vendor/messages" className="text-xs font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 px-3 py-1 rounded-full border border-emerald-200 transition-colors">
+                    📬 Inbox
+                  </Link>
+                )}
+              </div>
             </div>
           </div>
 

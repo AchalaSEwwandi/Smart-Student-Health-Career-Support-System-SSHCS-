@@ -3,7 +3,7 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 
-const { getProfile, updateProfile, uploadAvatar, changePassword } = require('../controllers/userController');
+const { getProfile, getPublicProfile, updateProfile, uploadAvatar, changePassword } = require('../controllers/userController');
 const verifyToken = require('../middleware/auth');
 
 // Multer config for avatar uploads
@@ -28,6 +28,7 @@ const upload = multer({
 });
 
 router.get('/profile', verifyToken, getProfile);
+router.get('/profile/:id', getPublicProfile); // Public route
 router.put('/profile', verifyToken, updateProfile);
 router.post('/profile/avatar', verifyToken, upload.single('avatar'), uploadAvatar);
 router.put('/profile/password', verifyToken, changePassword);
