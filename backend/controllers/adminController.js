@@ -1,6 +1,7 @@
 const Order = require('../models/Order');
 const DeliveryAssignment = require('../models/DeliveryAssignment');
 const Payment = require('../models/Payment');
+const Product = require('../models/Product');
 
 /**
  * Normalise the :storeName URL segment to the full shopName string used in the DB.
@@ -144,4 +145,50 @@ const updateOrderStatus = async (req, res) => {
   }
 };
 
-module.exports = { getStoreOrders, getStoreDeliveries, getStorePayments, getStoreStats, updateOrderStatus };
+// POST /api/admin/stores/:storeName/products
+const createProduct = async (req, res) => {
+  try {
+    const storeName = resolveShopName(req.params.storeName);
+    const { name, unit, description, category, price, stock, image, isAvailable } = req.body;
+
+    if (!name || !name.trim())
+      return res.status(400).json({ success: false, message: 'Product name is required' });
+    if (!description || !description.trim())
+      return res.status(400).json({ success: false, message: 'Description is required' });
+    if (!category || !category.trim())
+      return res.status(400).json({ success: false, message: 'Category is required' });
+    if (price === undefined || isNaN(Number(price)) || Number(price) < 0)
+      return res.status(400).json({ success: false, message: 'Price must be a positive number' });
+    if (stock !== undefined && (isNaN(Number(stock)) || Number(stock) < 0))
+      return res.status(400).json({ success: false, message: 'Stock must be >= 0' });
+
+    const product = await Product.create({
+      name:        name.trim(),
+      unit:        (unit || '').trim(),
+      description: description.trim(),
+      category:    category.trim(),
+      price:       Number(price),
+      stock:       Number(stock || 0),
+      image:       image || '',
+      isAvailable: isAvailable !== undefined ? Boolean(isAvailable) : true,
+      storeName,
+    });
+
+    res.status(201).json({ success: true, data: product });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// GET /api/admin/stores/:storeName/products
+const getStoreProducts = async (req, res) => {
+  try {
+    const storeName = resolveShopName(req.params.storeName);
+    const products = await Product.find({ storeName }).sort({ createdAt: -1 });
+    res.json({ success: true, data: products });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+module.exports = { getStoreOrders, getStoreDeliveries, getStorePayments, getStoreStats, updateOrderStatus, createProduct, getStoreProducts };

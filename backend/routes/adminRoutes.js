@@ -6,6 +6,8 @@ const {
   getStorePayments,
   getStoreStats,
   updateOrderStatus,
+  createProduct,
+  getStoreProducts,
 } = require('../controllers/adminController');
 
 // GET /api/admin/stores/:storeName/orders
@@ -22,5 +24,11 @@ router.get('/stores/:storeName/stats', getStoreStats);
 
 // PUT /api/admin/stores/:storeName/orders/:orderId/status
 router.put('/stores/:storeName/orders/:orderId/status', updateOrderStatus);
+
+// GET /api/admin/stores/:storeName/products
+router.get('/stores/:storeName/products', getStoreProducts);
+
+// POST /api/admin/stores/:storeName/products
+router.post('/stores/:storeName/products', createProduct);
 
 module.exports = router;

@@ -1,14 +1,22 @@
 const mongoose = require('mongoose');
 
-const productSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  description: { type: String, default: '' },
-  price: { type: Number, required: true },
-  image: { type: String, default: '' },
-  category: { type: String, default: 'General' },
-  stock: { type: Number, default: 100 },
-  shop: { type: mongoose.Schema.Types.ObjectId, ref: 'Shop', required: true },
-  isAvailable: { type: Boolean, default: true },
-});
+const productSchema = new mongoose.Schema(
+  {
+    name:        { type: String, required: true, trim: true },
+    unit:        { type: String, default: '' },          // e.g. "1kg", "500ml", "Pack"
+    description: { type: String, default: '' },
+    category:    { type: String, default: 'General' },
+    price:       { type: Number, required: true, min: 0 },
+    stock:       { type: Number, default: 0, min: 0 },
+    image:       { type: String, default: '' },          // base64 data-URL or URL string
+    isAvailable: { type: Boolean, default: true },
+    // storeName matches the resolved name used across the admin system
+    // e.g. 'Cargils' | 'Abenayaka Stores' | 'Dewnini Stores'
+    storeName:   { type: String, required: true, index: true },
+    // keep ObjectId ref for backward compatibility
+    shop:        { type: mongoose.Schema.Types.ObjectId, ref: 'Shop', default: null },
+  },
+  { timestamps: true }
+);
 
 module.exports = mongoose.model('Product', productSchema);
