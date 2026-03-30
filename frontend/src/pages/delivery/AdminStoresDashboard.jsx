@@ -90,7 +90,7 @@ export default function AdminStoresDashboard() {
         <div className="fade-up" style={{ textAlign: 'center', marginBottom: '3rem' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.375rem 1rem', borderRadius: '999px', background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.3)', marginBottom: '1.25rem' }}>
             <span style={{ width: '0.45rem', height: '0.45rem', borderRadius: '50%', background: '#10b981', display: 'inline-block' }} />
-            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#93c5fd' }}>Admin Dashboard</span>
+            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#93c5fd' }}>Shop Owner Dashboard</span>
           </div>
           <h1 style={{ fontSize: 'clamp(1.75rem,4vw,2.75rem)', fontWeight: 800, color: TEXT, margin: '0 0 0.875rem', lineHeight: 1.2 }}>
             Store Management Dashboard
