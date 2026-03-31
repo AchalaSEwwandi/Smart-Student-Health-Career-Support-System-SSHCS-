@@ -17,7 +17,11 @@ const app = express();
 
 // ── Middleware ──────────────────────────────────────────────────────────────
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  origin: [
+    process.env.CLIENT_URL,
+    'http://localhost:5173',
+    'http://localhost:5174'
+  ].filter(Boolean),
   credentials: true,
 }));
 app.use(express.json());
@@ -38,7 +42,7 @@ app.use('/api/users', userRoutes);
 app.use(errorHandler);
 
 // ── Start Server ────────────────────────────────────────────────────────────
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 connectDB().then(() => {
   app.listen(PORT, () => {
