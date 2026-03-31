@@ -1,6 +1,17 @@
+import { useNavigate } from 'react-router-dom';
+
 export default function ServiceCard({ icon, title, description, color }) {
+  const navigate = useNavigate();
+  const isDoctorService = title === 'Doctor Appointment';
+  
+  const handleClick = () => {
+    if (isDoctorService) {
+      navigate('/student/doctors');
+    }
+  };
+  
   return (
-    <div className="group relative bg-white rounded-2xl p-8 shadow-md shadow-gray-100 border border-gray-100 card-hover cursor-pointer">
+    <div onClick={handleClick} className="group relative bg-white rounded-2xl p-8 shadow-md shadow-gray-100 border border-gray-100 card-hover cursor-pointer">
       {/* Color accent top bar */}
       <div
         className="absolute top-0 left-8 right-8 h-1 rounded-b-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"

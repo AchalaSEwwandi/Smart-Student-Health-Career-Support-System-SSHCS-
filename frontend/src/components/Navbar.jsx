@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -7,6 +8,8 @@ const navLinks = [
   { name: 'Health Services', href: '/student/doctors' },
   { name: 'Delivery', href: '#grocery' },
   { name: 'AI Assistant', href: '#services' },
+  { name: 'About Us', href: '/about' },
+  { name: 'Contact Us', href: '/contact' },
 ];
 
 export default function Navbar() {
