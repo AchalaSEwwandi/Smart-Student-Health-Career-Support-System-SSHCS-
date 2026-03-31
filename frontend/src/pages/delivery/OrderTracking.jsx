@@ -42,6 +42,15 @@ export default function OrderTracking() {
     return () => clearInterval(intervalRef.current);
   }, [orderId]);
 
+  /* Auto-navigate to "Your Order Has Arrived!" when status becomes Delivered */
+  useEffect(() => {
+    if (tracking?.status === 'Delivered') {
+      clearInterval(intervalRef.current);
+      const timer = setTimeout(() => navigate(`/delivery/confirmation/${orderId}`), 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [tracking?.status]);
+
   const currentIdx  = STATUS_STEPS.indexOf(tracking?.status || 'Pending');
   const progressPct = Math.round(((currentIdx + 1) / STATUS_STEPS.length) * 100);
   const currentMeta = STATUS_META[tracking?.status] || STATUS_META.Pending;
@@ -212,28 +221,63 @@ export default function OrderTracking() {
               </div>
             </div>
 
-            {/* ── Action Buttons (read-only — no status change) ── */}
-            {tracking?.status === 'Delivered' ? (
+            {/* ── Action Buttons ── */}
+
+            {/* ── "Track Delivery" button ──
+                 Visible when status is Processing OR Out for Delivery
+            ── */}
+            {(tracking?.status === 'Processing' || tracking?.status === 'Out for Delivery') && (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
+                <button
+                  id="track-delivery-btn"
+                  onClick={() => navigate(`/delivery/live-tracking/${orderId}`)}
+                  className="w-full py-4 font-bold rounded-2xl text-base transition-all duration-200 flex items-center justify-center gap-2"
+                  style={{
+                    background: tracking?.status === 'Out for Delivery'
+                      ? 'linear-gradient(135deg, #F97316, #EA580C)'
+                      : 'linear-gradient(135deg, #2563EB, #1D4ED8)',
+                    color:      '#fff',
+                    boxShadow:  tracking?.status === 'Out for Delivery'
+                      ? '0 4px 24px rgba(249,115,22,0.45)'
+                      : '0 4px 24px rgba(37,99,235,0.45)',
+                    border:     'none',
+                    cursor:     'pointer',
+                    transition: 'all 0.2s ease',
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.transform = 'translateY(-3px)';
+                    e.currentTarget.style.boxShadow = tracking?.status === 'Out for Delivery'
+                      ? '0 8px 32px rgba(249,115,22,0.55)'
+                      : '0 8px 32px rgba(37,99,235,0.55)';
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = tracking?.status === 'Out for Delivery'
+                      ? '0 4px 24px rgba(249,115,22,0.45)'
+                      : '0 4px 24px rgba(37,99,235,0.45)';
+                  }}
+                >
+                  {tracking?.status === 'Out for Delivery' ? '🛵' : '📍'} Track Delivery
+                </button>
+                <p style={{ fontSize: '0.72rem', color: '#475569', margin: 0 }}>
+                  {tracking?.status === 'Out for Delivery'
+                    ? 'Your order is on the way — view live map'
+                    : 'Order is being prepared — monitor progress'}
+                </p>
+              </div>
+            )}
+
+            {/* "Delivered" — confirm receipt button (also shown briefly before auto-redirect) */}
+            {tracking?.status === 'Delivered' && (
               <button
                 id="confirm-delivery-btn"
                 onClick={() => navigate(`/delivery/confirmation/${orderId}`)}
                 className="w-full py-4 font-bold rounded-2xl text-base transition-all duration-200 hover:-translate-y-0.5 flex items-center justify-center gap-2"
-                style={{ background: '#10B981', color: '#fff', boxShadow: '0 4px 20px rgba(16,185,129,0.4)' }}
-                onMouseEnter={e => e.currentTarget.style.background = '#059669'}
-                onMouseLeave={e => e.currentTarget.style.background = '#10B981'}
+                style={{ background: '#10B981', color: '#fff', boxShadow: '0 4px 20px rgba(16,185,129,0.4)', border: 'none', cursor: 'pointer' }}
+                onMouseEnter={e => { e.currentTarget.style.background = '#059669'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = '#10B981'; e.currentTarget.style.transform = 'translateY(0)'; }}
               >
-                ✅ Confirm Delivery Received
-              </button>
-            ) : (
-              <button
-                id="go-to-confirmation-btn"
-                onClick={() => navigate(`/delivery/confirmation/${orderId}`)}
-                className="w-full py-3 font-semibold rounded-2xl transition-all duration-200 text-sm flex items-center justify-center gap-2"
-                style={{ background: '#2563EB', color: '#F8FAFC', boxShadow: '0 4px 16px rgba(37,99,235,0.35)' }}
-                onMouseEnter={e => e.currentTarget.style.background = '#1D4ED8'}
-                onMouseLeave={e => e.currentTarget.style.background = '#2563EB'}
-              >
-                Mark as Received
+                ✅ Your Order Has Arrived! — Confirm Receipt
               </button>
             )}
 

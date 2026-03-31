@@ -16,6 +16,7 @@ import CartPage from './pages/delivery/CartPage';
 import PaymentPage from './pages/delivery/PaymentPage';
 import DeliveryAddressPage from './pages/delivery/DeliveryAddressPage';
 import OrderTracking from './pages/delivery/OrderTracking';
+import DeliveryTracking from './pages/delivery/DeliveryTracking';
 import DeliveryConfirmation from './pages/delivery/DeliveryConfirmation';
 import RatingPage from './pages/delivery/RatingPage';
 import OrderHistory from './pages/delivery/OrderHistory';
@@ -52,6 +53,8 @@ function App() {
         <Route path="/delivery/payment/:orderId" element={<PaymentPage />} />
         <Route path="/delivery/address/:orderId" element={<DeliveryAddressPage />} />
         <Route path="/delivery/tracking/:orderId" element={<OrderTracking />} />
+        <Route path="/delivery/delivery-tracking/:orderId" element={<DeliveryTracking />} />
+        <Route path="/delivery/live-tracking/:orderId"     element={<DeliveryTracking />} />
         <Route path="/delivery/confirmation/:orderId" element={<DeliveryConfirmation />} />
         <Route path="/delivery/rating/:orderId" element={<RatingPage />} />
         <Route path="/delivery/history" element={<OrderHistory />} />
