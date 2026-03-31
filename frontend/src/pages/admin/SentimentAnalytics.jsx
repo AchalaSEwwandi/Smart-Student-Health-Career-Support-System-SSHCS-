@@ -13,7 +13,7 @@ const SentimentAnalytics = () => {
 
   const fetchAnalytics = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/feedback/admin/analytics', {
+      const res = await axios.get('http://localhost:5001/api/feedback/admin/analytics', {
         headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` }
       });
       if (res.data.success) {
