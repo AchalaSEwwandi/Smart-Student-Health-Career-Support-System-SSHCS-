@@ -226,10 +226,24 @@ const AdminUsers = () => {
                           <span>{u.faculty} · Yr {u.year} Sem {u.semester}</span>
                         )}
                         {u.role === 'doctor' && (
-                          <span>{u.specialization || '—'}{u.hospitalName ? ` · ${u.hospitalName}` : ''}</span>
+                          <span>
+                            {u.specialization || '—'}{u.hospitalName ? ` · ${u.hospitalName}` : ''}
+                            {u.medicalLicenseFile && (
+                              <a href={`http://localhost:5001/uploads/licenses/${u.medicalLicenseFile}`} target="_blank" rel="noreferrer" className="block mt-1 font-medium text-blue-600 hover:text-blue-800 hover:underline">
+                                📄 View Medical License
+                              </a>
+                            )}
+                          </span>
                         )}
                         {u.role === 'shop_owner' && (
-                          <span>{u.shopName || '—'}{u.businessType ? ` (${u.businessType})` : ''}</span>
+                          <span>
+                            {u.shopName || '—'}{u.businessType ? ` (${u.businessType})` : ''}
+                            {u.businessLicenseFile && (
+                              <a href={`http://localhost:5001/uploads/licenses/${u.businessLicenseFile}`} target="_blank" rel="noreferrer" className="block mt-1 font-medium text-blue-600 hover:text-blue-800 hover:underline">
+                                📄 View Business License
+                              </a>
+                            )}
+                          </span>
                         )}
                       </td>
 
