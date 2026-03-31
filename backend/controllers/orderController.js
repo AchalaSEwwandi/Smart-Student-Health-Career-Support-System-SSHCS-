@@ -156,12 +156,70 @@ const getOrderTracking = async (req, res) => {
       data: {
         orderId: order._id,
         status: order.status,
-        shopName: order.shop ? order.shop.name : '',
+        shopName: order.shop ? order.shop.name : order.shopName || '',
         grandTotal: order.grandTotal,
         deliveryPersonName: assignment ? assignment.deliveryPersonName : 'Being assigned...',
         createdAt: order.createdAt,
       },
     });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// GET delivery tracking — enriched view for DeliveryTracking page
+// Also auto-assigns a delivery person if none exists
+const getDeliveryTracking = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const order = await Order.findById(orderId);
+    if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
+
+    // Auto-assign delivery person if not already assigned
+    let assignment = await DeliveryAssignment.findOne({ order: orderId });
+    if (!assignment) {
+      const deliveryPerson = await User.findOne({ role: 'delivery' }).catch(() => null);
+      const personName = deliveryPerson ? deliveryPerson.name : 'Kamal Perera';
+      const personId   = deliveryPerson ? deliveryPerson._id : '000000000000000000000002';
+      assignment = new DeliveryAssignment({
+        order:              orderId,
+        deliveryPerson:     personId,
+        deliveryPersonName: personName,
+      });
+      await assignment.save().catch(() => {});
+    }
+
+    res.json({
+      success: true,
+      data: {
+        orderId:            order._id,
+        storeName:          order.shopName || 'Campus Shop',
+        deliveryPersonName: assignment.deliveryPersonName || 'Being assigned…',
+        status:             order.status,
+        grandTotal:         order.grandTotal,
+        deliveryAddress:    order.deliveryAddress || '',
+        deliveryArea:       order.deliveryArea    || '',
+        telephone:          order.telephone       || '',
+        createdAt:          order.createdAt,
+        updatedAt:          order.updatedAt || order.createdAt,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// PUT mark order as Delivered (called by frontend simulation on completion)
+const markDelivered = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const order = await Order.findByIdAndUpdate(
+      orderId,
+      { status: 'Delivered' },
+      { new: true }
+    );
+    if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
+    res.json({ success: true, message: 'Order marked as Delivered', data: { status: order.status } });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -317,6 +375,8 @@ module.exports = {
   processPayment,
   assignDelivery,
   getOrderTracking,
+  getDeliveryTracking,
+  markDelivered,
   updateOrderStatus,
   confirmDelivery,
   submitRating,

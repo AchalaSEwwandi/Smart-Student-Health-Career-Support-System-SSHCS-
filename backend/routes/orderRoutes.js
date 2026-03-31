@@ -6,6 +6,8 @@ const {
   processPayment,
   assignDelivery,
   getOrderTracking,
+  getDeliveryTracking,
+  markDelivered,
   updateOrderStatus,
   confirmDelivery,
   submitRating,
@@ -31,8 +33,14 @@ router.post('/assign-delivery', assignDelivery);
 // GET /api/orders/:orderId/tracking - get tracking info
 router.get('/:orderId/tracking', getOrderTracking);
 
+// GET /api/orders/:orderId/delivery-tracking - enriched delivery tracking page
+router.get('/:orderId/delivery-tracking', getDeliveryTracking);
+
 // PUT /api/orders/:orderId/status - update order status
 router.put('/:orderId/status', updateOrderStatus);
+
+// PUT /api/orders/:orderId/mark-delivered - simulation writes Delivered to DB
+router.put('/:orderId/mark-delivered', markDelivered);
 
 // POST /api/orders/:orderId/confirm - confirm delivery
 router.post('/:orderId/confirm', confirmDelivery);
