@@ -25,6 +25,12 @@ import ResetPassword from './pages/auth/ResetPassword';
 
 // Student pages
 import StudentProfile from './pages/student/Profile';
+import TopRated from './pages/student/TopRated';
+
+// Vendor dashboard pages
+import DoctorDashboard from './pages/doctor/Dashboard';
+import ShopDashboard from './pages/shop/Dashboard';
+import DeliveryDashboard from './pages/delivery/Dashboard';
 
 // Shared pages
 import PublicProfile from './pages/shared/PublicProfile';
@@ -84,9 +90,9 @@ const AppContent = () => {
               <Route path="/profile" element={<ProtectedRoute><StudentProfile /></ProtectedRoute>} />
 
               {/* Doctor / shop / delivery dashboards (placeholder redirects) */}
-              <Route path="/doctor/dashboard" element={<ProtectedRoute roles={['doctor']}><StudentProfile /></ProtectedRoute>} />
-              <Route path="/shop/dashboard" element={<ProtectedRoute roles={['shop_owner']}><StudentProfile /></ProtectedRoute>} />
-              <Route path="/delivery/dashboard" element={<ProtectedRoute roles={['delivery_person']}><StudentProfile /></ProtectedRoute>} />
+              <Route path="/doctor/dashboard" element={<ProtectedRoute roles={['doctor']}><DoctorDashboard /></ProtectedRoute>} />
+              <Route path="/shop/dashboard" element={<ProtectedRoute roles={['shop_owner']}><ShopDashboard /></ProtectedRoute>} />
+              <Route path="/delivery/dashboard" element={<ProtectedRoute roles={['delivery_person']}><DeliveryDashboard /></ProtectedRoute>} />
 
               {/* Admin */}
               <Route path="/admin/dashboard" element={<ProtectedRoute roles={['admin']}><AdminDashboard /></ProtectedRoute>} />
@@ -96,6 +102,9 @@ const AppContent = () => {
 
               {/* Feedback Form */}
               <Route path="/feedback" element={<ProtectedRoute roles={['student']}><FeedbackForm /></ProtectedRoute>} />
+
+              {/* Student extras */}
+              <Route path="/student/top-rated" element={<ProtectedRoute roles={['student']}><TopRated /></ProtectedRoute>} />
 
         </Routes>
       </main>

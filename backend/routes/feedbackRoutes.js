@@ -4,7 +4,8 @@ const {
   submitFeedback,
   getFeedbackByTarget,
   getTopRated,
-  getAdminAnalytics
+  getAdminAnalytics,
+  getMyAnalytics
 } = require('../controllers/feedbackController');
 
 const verifyToken = require('../middleware/auth');
@@ -20,6 +21,9 @@ router.get('/top', getTopRated);
 
 // GET /api/feedback/admin/analytics (Only Admin)
 router.get('/admin/analytics', verifyToken, roleCheck('admin'), getAdminAnalytics);
+
+// GET /api/feedback/my/analytics (Vendors: doctor, shop_owner, delivery_person)
+router.get('/my/analytics', verifyToken, roleCheck('doctor', 'shop_owner', 'delivery_person'), getMyAnalytics);
 
 // GET /api/feedback/:targetId (Protected, internal check allows Shop owner to view their own, Admin views any)
 // Optionally we can require a token if we only want users to see it. 

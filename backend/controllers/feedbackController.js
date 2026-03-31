@@ -238,3 +238,49 @@ exports.getAdminAnalytics = async (req, res, next) => {
     next(error);
   }
 };
+// @desc    Get my own feedback analytics (for vendor dashboard)
+// @route   GET /api/feedback/my/analytics
+// @access  Private (doctor, shop_owner, delivery_person)
+exports.getMyAnalytics = async (req, res, next) => {
+  try {
+    const targetId = req.user.id;
+
+    const totalCount = await Feedback.countDocuments({ targetId });
+
+    const avgObj = await Feedback.aggregate([
+      { $match: { targetId: require('mongoose').Types.ObjectId.createFromHexString(targetId) } },
+      { $group: { _id: null, avgRating: { $avg: '$rating' } } }
+    ]);
+    const averageRating = avgObj.length > 0 ? avgObj[0].avgRating : 0;
+
+    const sentiments = await Feedback.aggregate([
+      { $match: { targetId: require('mongoose').Types.ObjectId.createFromHexString(targetId) } },
+      { $group: { _id: '$sentiment', count: { $sum: 1 } } }
+    ]);
+
+    const ratingDist = await Feedback.aggregate([
+      { $match: { targetId: require('mongoose').Types.ObjectId.createFromHexString(targetId) } },
+      { $group: { _id: '$rating', count: { $sum: 1 } } },
+      { $sort: { _id: 1 } }
+    ]);
+
+    const recent = await Feedback.find({ targetId })
+      .populate('userId', 'name')
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .select('rating comment sentiment createdAt userId');
+
+    res.status(200).json({
+      success: true,
+      data: {
+        totalFeedback: totalCount,
+        averageRating,
+        sentimentDistribution: sentiments,
+        ratingDistribution: ratingDist,
+        recentComments: recent
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
