@@ -203,11 +203,12 @@ export default function DeliveryTracking() {
   const { orderId } = useParams();
   const navigate    = useNavigate();
 
-  const [data,    setData]    = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error,   setError]   = useState(null);   // API error message
-  const [lastUpd, setLastUpd] = useState(null);
-  const [pulse,   setPulse]   = useState(false);
+  const [data,           setData]           = useState(null);
+  const [loading,        setLoading]        = useState(true);
+  const [error,          setError]          = useState(null);
+  const [lastUpd,        setLastUpd]        = useState(null);
+  const [pulse,          setPulse]          = useState(false);
+  const [assignmentPending, setAssignmentPending] = useState(false); // true when no delivery person available
 
   /* ── Simulation state ── */
   const [simStep,   setSimStep]   = useState(0);                // index into DELIVERY_PATH
@@ -229,6 +230,7 @@ export default function DeliveryTracking() {
       );
       if (res.data.success) {
         setData(res.data.data);
+        setAssignmentPending(res.data.assignmentPending === true);
         setError(null);
         setLastUpd(new Date().toISOString());
         setPulse(true);
@@ -246,30 +248,33 @@ export default function DeliveryTracking() {
           setData({
             orderId:            d.orderId,
             storeName:          d.shopName || sessionStorage.getItem('shopName') || 'Campus Shop',
-            deliveryPersonName: d.deliveryPersonName || 'Being assigned…',
+            deliveryPersonName: d.deliveryPersonName || '',
             status:             d.status || 'Processing',
             grandTotal:         d.grandTotal,
             deliveryAddress:    '',
             telephone:          '',
             createdAt:          d.createdAt,
           });
+          // If the basic endpoint shows no name, treat as pending
+          setAssignmentPending(!d.deliveryPersonName || d.deliveryPersonName === 'Waiting for assignment…');
           setError(null);
           setLastUpd(new Date().toISOString());
         }
       } catch {
-        /* Both endpoints failed — use graceful offline fallback */
+        /* Both endpoints failed — show error, do NOT invent a fake delivery person */
         if (!data) {
           setData({
             orderId,
             storeName:          sessionStorage.getItem('shopName') || 'Campus Shop',
-            deliveryPersonName: 'Kamal Perera',
-            status:             'Out for Delivery',
+            deliveryPersonName: '',
+            status:             'Processing',
             grandTotal:         0,
             deliveryAddress:    '',
             telephone:          '',
             createdAt:          new Date().toISOString(),
           });
-          setError('Could not reach server. Showing last known data.');
+          setAssignmentPending(true);
+          setError('Could not reach server. Delivery person will be assigned once connection is restored.');
         } else {
           setError('Connection lost. Retrying…');
         }
@@ -523,25 +528,67 @@ export default function DeliveryTracking() {
                 <span style={{ fontWeight: 700, fontSize: '0.875rem', color: '#F8FAFC' }}>Delivery Information</span>
                 <span style={{
                   marginLeft: 'auto', fontSize: '0.68rem', fontWeight: 700,
-                  color: '#10B981', background: 'rgba(16,185,129,0.1)',
-                  border: '1px solid rgba(16,185,129,0.25)', borderRadius: '999px', padding: '0.15rem 0.6rem',
+                  color:      assignmentPending ? '#F59E0B' : '#10B981',
+                  background: assignmentPending ? 'rgba(245,158,11,0.1)' : 'rgba(16,185,129,0.1)',
+                  border:     assignmentPending ? '1px solid rgba(245,158,11,0.3)' : '1px solid rgba(16,185,129,0.25)',
+                  borderRadius: '999px', padding: '0.15rem 0.6rem',
                 }}>
-                  Auto-Assigned
+                  {assignmentPending ? '⏳ Pending Assignment' : 'Auto-Assigned'}
                 </span>
               </CardHeader>
+
+              {/* ── No delivery person available banner ── */}
+              {assignmentPending && (
+                <div style={{
+                  margin: '1rem 1.5rem 0',
+                  padding: '0.9rem 1.1rem',
+                  borderRadius: '0.875rem',
+                  background: 'rgba(245,158,11,0.07)',
+                  border: '1px solid rgba(245,158,11,0.28)',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '0.7rem',
+                }}>
+                  <span style={{ fontSize: '1.2rem', flexShrink: 0 }}>⏳</span>
+                  <div>
+                    <p style={{ margin: 0, fontWeight: 700, fontSize: '0.875rem', color: '#FCD34D' }}>
+                      Waiting for a delivery person to be assigned
+                    </p>
+                    <p style={{ margin: '0.3rem 0 0', fontSize: '0.78rem', color: '#92400E' }}>
+                      No delivery person is currently available for {data?.storeName || 'this store'}.
+                      The shop owner is being notified. This page refreshes automatically.
+                    </p>
+                  </div>
+                </div>
+              )}
+
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem', padding: '1.25rem 1.5rem' }}>
-                <InfoRow
-                  label="Delivery Person"
-                  value={data?.deliveryPersonName || 'Assigning…'}
-                  valueStyle={data?.deliveryPersonName && data.deliveryPersonName !== 'Being assigned…'
-                    ? { color: '#F8FAFC' }
-                    : { color: '#64748B', fontStyle: 'italic' }}
-                />
+                {!assignmentPending && (
+                  <InfoRow
+                    label="Delivery Person"
+                    value={data?.deliveryPersonName || '—'}
+                    valueStyle={{ color: '#F8FAFC' }}
+                  />
+                )}
                 <InfoRow
                   label="Delivery Status"
                   value={displayStatus}
                   valueStyle={{ color: meta.color }}
                 />
+                {!assignmentPending && data?.deliveryPersonPhone && (
+                  <InfoRow
+                    label="Rider Contact"
+                    value={data.deliveryPersonPhone}
+                    valueStyle={{ color: '#94A3B8' }}
+                  />
+                )}
+                {!assignmentPending && data?.vehicleType && (
+                  <InfoRow
+                    label="Vehicle"
+                    value={`${data.vehicleType}${data.vehicleNumber ? ' \u00B7 ' + data.vehicleNumber : ''}`}
+                    valueStyle={{ color: '#94A3B8' }}
+                  />
+                )}
                 {data?.deliveryAddress && (
                   <div style={{ gridColumn: '1 / -1' }}>
                     <InfoRow

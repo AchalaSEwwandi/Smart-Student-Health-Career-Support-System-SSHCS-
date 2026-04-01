@@ -356,6 +356,216 @@ function AddProductModal({ storeSlug, storeName, accent, onClose, onSaved }) {
 }
 
 /* ══════════════════════════════════════════════ */
+/* ── Add Delivery Person Modal ── */
+
+const VEHICLE_TYPES    = ['Motorcycle', 'Bicycle', 'Scooter', 'Three-Wheeler', 'Car', 'Van', 'Other'];
+const DELIVERY_AREAS   = ['SLIIT Campus', 'Malabe Town', 'Kaduwela', 'Athurugiriya', 'Battaramulla', 'Rajagiriya', 'Full Zone'];
+const EMPTY_DP_FORM    = { fullName: '', phone: '', nic: '', vehicleType: '', vehicleNumber: '', deliveryArea: '', availability: 'Available' };
+
+function AddDeliveryPersonModal({ storeSlug, storeName, accent, onClose, onSaved }) {
+  const [form,   setForm]   = useState({ ...EMPTY_DP_FORM });
+  const [errors, setErrors] = useState({});
+  const [saving, setSaving] = useState(false);
+  const [done,   setDone]   = useState(false);
+
+  const set = (k, v) => { setForm(f => ({ ...f, [k]: v })); setErrors(e => { const n = { ...e }; delete n[k]; return n; }); };
+
+  const validate = () => {
+    const e = {};
+    if (!form.fullName.trim())       e.fullName       = 'Full name is required';
+    if (!form.phone.trim())          e.phone          = 'Phone number is required';
+    else if (!/^(\+94|0)\d{9}$/.test(form.phone.trim().replace(/\s/g, '')))
+                                     e.phone          = 'Enter a valid Sri Lankan number (e.g. 07XXXXXXXX)';
+    if (!form.nic.trim())            e.nic            = 'NIC / ID is required';
+    if (!form.vehicleType)           e.vehicleType    = 'Select a vehicle type';
+    if (!form.vehicleNumber.trim())  e.vehicleNumber  = 'Vehicle number is required';
+    if (!form.deliveryArea)          e.deliveryArea   = 'Select a delivery area';
+    return e;
+  };
+
+  const handleSubmit = async (ev) => {
+    ev.preventDefault();
+    const e = validate();
+    if (Object.keys(e).length) { setErrors(e); return; }
+    setSaving(true);
+    try {
+      const res  = await fetch(`${BASE}/${storeSlug}/delivery-persons`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(form),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.message || 'Failed to save delivery person');
+      setDone(true);
+      setTimeout(() => onSaved(data.data), 900);
+    } catch (err) {
+      setErrors(e => ({ ...e, _general: err.message }));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  /* Input + label + error helpers matching AddProductModal style */
+  const inp = (hasErr) => ({
+    width: '100%', boxSizing: 'border-box',
+    background: '#0c1a2e',
+    border: `1.5px solid ${hasErr ? 'rgba(239,68,68,0.6)' : BORDER}`,
+    borderRadius: '0.625rem', color: TEXT, fontSize: '0.875rem',
+    padding: '0.6rem 0.875rem', outline: 'none', transition: 'border-color 0.2s',
+    fontFamily: 'inherit',
+  });
+  const selInp = (hasErr) => ({ ...inp(hasErr), appearance: 'none', WebkitAppearance: 'none', cursor: 'pointer', paddingRight: '2rem' });
+  const lbl    = { fontSize: '0.78rem', fontWeight: 600, color: MUTED, marginBottom: '0.35rem', display: 'block' };
+  const err    = (msg) => msg ? <p style={{ fontSize: '0.72rem', color: '#fca5a5', marginTop: '0.25rem' }}>{msg}</p> : null;
+  const focus  = (e) => (e.target.style.borderColor = accent);
+  const blur   = (e, k) => (e.target.style.borderColor = errors[k] ? 'rgba(239,68,68,0.6)' : BORDER);
+
+  return (
+    <div
+      style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.76)', backdropFilter: 'blur(6px)' }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div style={{ background: '#0e1e35', border: `1px solid ${BORDER}`, borderRadius: '1.5rem', width: '100%', maxWidth: '660px', maxHeight: '92vh', overflowY: 'auto', boxShadow: `0 32px 80px rgba(0,0,0,0.7), 0 0 60px ${accent}20`, margin: '1rem' }}>
+
+        {/* Header */}
+        <div style={{ padding: '1.5rem 1.75rem', borderBottom: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'linear-gradient(135deg, rgba(20,35,60,0.9), rgba(8,18,37,0.9))' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div style={{ width: '2.5rem', height: '2.5rem', borderRadius: '0.75rem', background: `linear-gradient(135deg, ${accent}, ${accent}88)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', boxShadow: `0 4px 16px ${accent}40` }}>🛵</div>
+            <div>
+              <h2 style={{ color: TEXT, fontWeight: 800, fontSize: '1.15rem', margin: 0 }}>Add Delivery Person</h2>
+              <p style={{ color: accent, fontSize: '0.72rem', margin: 0, fontWeight: 600 }}>{storeName} — Shop Owner Dashboard</p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            style={{ background: 'rgba(255,255,255,0.06)', border: `1px solid ${BORDER}`, color: MUTED, width: '2rem', height: '2rem', borderRadius: '0.5rem', cursor: 'pointer', fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            onMouseEnter={e => e.currentTarget.style.color = TEXT}
+            onMouseLeave={e => e.currentTarget.style.color = MUTED}
+          >✕</button>
+        </div>
+
+        {/* Success state */}
+        {done ? (
+          <div style={{ padding: '3rem 2rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', textAlign: 'center' }}>
+            <div style={{ fontSize: '3.5rem', animation: 'fadeUp 0.4s ease' }}>✅</div>
+            <p style={{ fontWeight: 800, fontSize: '1.1rem', color: '#6ee7b7', margin: 0 }}>Delivery person added!</p>
+            <p style={{ color: MUTED, fontSize: '0.85rem', margin: 0 }}>{form.fullName} has been registered for {storeName}.</p>
+          </div>
+        ) : (
+          /* Form */
+          <form onSubmit={handleSubmit} style={{ padding: '1.5rem 1.75rem', display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
+
+          {errors._general && (
+            <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '0.75rem', padding: '0.75rem 1rem', color: '#fca5a5', fontSize: '0.82rem' }}>
+              ⚠️ {errors._general}
+            </div>
+          )}
+
+            {/* Row 1: Full Name + Phone */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.875rem' }}>
+              <div>
+                <label style={lbl}>Full Name <span style={{ color: '#ef4444' }}>*</span></label>
+                <input style={inp(errors.fullName)} placeholder="e.g. Kasun Perera" value={form.fullName}
+                  onChange={e => set('fullName', e.target.value)} onFocus={focus} onBlur={e => blur(e, 'fullName')} />
+                {err(errors.fullName)}
+              </div>
+              <div>
+                <label style={lbl}>Phone Number <span style={{ color: '#ef4444' }}>*</span></label>
+                <input style={inp(errors.phone)} placeholder="e.g. 0712345678" value={form.phone}
+                  onChange={e => set('phone', e.target.value)} onFocus={focus} onBlur={e => blur(e, 'phone')} />
+                {err(errors.phone)}
+              </div>
+            </div>
+
+            {/* Row 2: NIC + Vehicle Type */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.875rem' }}>
+              <div>
+                <label style={lbl}>NIC / ID <span style={{ color: '#ef4444' }}>*</span></label>
+                <input style={inp(errors.nic)} placeholder="e.g. 200012345678" value={form.nic}
+                  onChange={e => set('nic', e.target.value)} onFocus={focus} onBlur={e => blur(e, 'nic')} />
+                {err(errors.nic)}
+              </div>
+              <div>
+                <label style={lbl}>Vehicle Type <span style={{ color: '#ef4444' }}>*</span></label>
+                <div style={{ position: 'relative' }}>
+                  <select style={selInp(errors.vehicleType)} value={form.vehicleType}
+                    onChange={e => set('vehicleType', e.target.value)} onFocus={focus} onBlur={e => blur(e, 'vehicleType')}>
+                    <option value="">Select type…</option>
+                    {VEHICLE_TYPES.map(v => <option key={v} value={v} style={{ background: '#0c1a2e' }}>{v}</option>)}
+                  </select>
+                  <span style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: MUTED, fontSize: '0.7rem' }}>▼</span>
+                </div>
+                {err(errors.vehicleType)}
+              </div>
+            </div>
+
+            {/* Row 3: Vehicle Number + Delivery Area */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.875rem' }}>
+              <div>
+                <label style={lbl}>Vehicle Number <span style={{ color: '#ef4444' }}>*</span></label>
+                <input style={inp(errors.vehicleNumber)} placeholder="e.g. CAB-1234" value={form.vehicleNumber}
+                  onChange={e => set('vehicleNumber', e.target.value.toUpperCase())} onFocus={focus} onBlur={e => blur(e, 'vehicleNumber')} />
+                {err(errors.vehicleNumber)}
+              </div>
+              <div>
+                <label style={lbl}>Delivery Area <span style={{ color: '#ef4444' }}>*</span></label>
+                <div style={{ position: 'relative' }}>
+                  <select style={selInp(errors.deliveryArea)} value={form.deliveryArea}
+                    onChange={e => set('deliveryArea', e.target.value)} onFocus={focus} onBlur={e => blur(e, 'deliveryArea')}>
+                    <option value="">Select area…</option>
+                    {DELIVERY_AREAS.map(a => <option key={a} value={a} style={{ background: '#0c1a2e' }}>{a}</option>)}
+                  </select>
+                  <span style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: MUTED, fontSize: '0.7rem' }}>▼</span>
+                </div>
+                {err(errors.deliveryArea)}
+              </div>
+            </div>
+
+            {/* Availability Status toggle */}
+            <div>
+              <label style={lbl}>Availability Status</label>
+              <div style={{ display: 'flex', gap: '0.625rem' }}>
+                {['Available', 'Busy'].map(v => (
+                  <button key={v} type="button" onClick={() => set('availability', v)}
+                    style={{ flex: 1, padding: '0.6rem 0.5rem', borderRadius: '0.625rem', border: `1.5px solid ${form.availability === v ? accent : BORDER}`, background: form.availability === v ? `${accent}20` : 'transparent', color: form.availability === v ? accent : MUTED, fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}>
+                    {v === 'Available' ? '🟢' : '🔴'} {v}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Store (locked) */}
+            <div>
+              <label style={lbl}>Assigned Store</label>
+              <input style={{ ...inp(false), color: accent, cursor: 'not-allowed', opacity: 0.85, fontWeight: 700 }} value={storeName} disabled />
+              <p style={{ fontSize: '0.7rem', color: '#475569', marginTop: '0.25rem' }}>Store is automatically set based on your current dashboard.</p>
+            </div>
+
+            {/* Actions */}
+            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', paddingTop: '0.5rem', borderTop: `1px solid ${BORDER}` }}>
+              <button type="button" onClick={onClose}
+                style={{ padding: '0.7rem 1.5rem', borderRadius: '0.75rem', border: `1px solid ${BORDER}`, background: 'transparent', color: MUTED, fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer' }}
+                onMouseEnter={e => e.currentTarget.style.color = TEXT}
+                onMouseLeave={e => e.currentTarget.style.color = MUTED}>
+                Cancel
+              </button>
+              <button type="submit" disabled={saving}
+                style={{ padding: '0.7rem 1.75rem', borderRadius: '0.75rem', border: 'none', background: saving ? '#1e3a5f' : `linear-gradient(135deg, ${accent}, ${accent}cc)`, color: '#fff', fontSize: '0.875rem', fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', boxShadow: saving ? 'none' : `0 4px 20px ${accent}50`, transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '0.5rem', opacity: saving ? 0.75 : 1 }}
+                onMouseEnter={e => { if (!saving) e.currentTarget.style.filter = 'brightness(1.12)'; }}
+                onMouseLeave={e => e.currentTarget.style.filter = 'none'}>
+                {saving ? (
+                  <><span style={{ width: '1rem', height: '1rem', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite', display: 'inline-block' }} /> Saving…</>
+                ) : '🛵 Add Delivery Person'}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════ */
 /* ── Products Panel ── */
 function ProductsPanel({ storeSlug, meta, products, onAddClick }) {
   return (
@@ -664,11 +874,15 @@ function ViewModal({ item, storeName, accent, onClose }) {
     icon = '🚚'; title = 'Delivery Assignment';
     content = (
       <Sec title="Assignment Details">
-        <F label="Assignment ID" value={`#${shortId(data._id)}`} />
-        <F label="Order ID" value={`#${shortId(data.orderId)}`} />
-        <F label="Store" value={storeName} />
-        <F label="Delivery Person" value={data.deliveryPersonName || 'Unassigned'} />
-        <F label="Status" value={badge(data.status)} />
+        <F label="Assignment ID"    value={`#${shortId(data._id)}`} />
+        <F label="Order ID"         value={`#${shortId(data.orderId)}`} />
+        <F label="Store"            value={storeName} />
+        <F label="Delivery Person"  value={data.deliveryPersonName || 'Unassigned'} />
+        {data.deliveryPersonPhone && <F label="Rider Phone" value={data.deliveryPersonPhone} />}
+        {data.vehicleType && (
+          <F label="Vehicle" value={`${data.vehicleType}${data.vehicleNumber ? ' · ' + data.vehicleNumber : ''}`} />
+        )}
+        <F label="Status"      value={badge(data.status)} />
         <F label="Assigned At" value={fmtDate(data.assignedAt)} />
       </Sec>
     );
@@ -722,19 +936,21 @@ export default function StoreDashboard() {
 
   const meta = STORE_META[storeSlug] || { name: storeSlug, icon: '🏪', accent: PRIMARY, glow: 'rgba(59,130,246,0.25)', bg: 'linear-gradient(135deg,#1e3a8a,#2563eb)' };
 
-  const [orders,     setOrders]     = useState([]);
-  const [deliveries, setDeliveries] = useState([]);
-  const [payments,   setPayments]   = useState([]);
-  const [stats,      setStats]      = useState(null);
-  const [products,   setProducts]   = useState([]);
-  const [loading,    setLoading]    = useState(true);
-  const [error,      setError]      = useState('');
-  const [showModal,  setShowModal]  = useState(false);
-  const [toast,      setToast]      = useState(null); // { ok, msg }
+  const [orders,           setOrders]           = useState([]);
+  const [deliveries,       setDeliveries]       = useState([]);
+  const [payments,         setPayments]         = useState([]);
+  const [stats,            setStats]            = useState(null);
+  const [products,         setProducts]         = useState([]);
+  const [deliveryPersons,  setDeliveryPersons]  = useState([]);
+  const [loading,          setLoading]          = useState(true);
+  const [error,            setError]            = useState('');
+  const [showModal,         setShowModal]         = useState(false);
+  const [showDeliveryModal, setShowDeliveryModal] = useState(false);
+  const [toast,      setToast]      = useState(null);
   const [ordF, setOrdF] = useState({ id: '', date: '' });
   const [delF, setDelF] = useState({ id: '', status: '' });
   const [payF, setPayF] = useState({ id: '', date: '' });
-  const [viewItem, setViewItem] = useState(null); // { type, data }
+  const [viewItem, setViewItem] = useState(null);
 
   const showGlobalToast = (ok, msg) => { setToast({ ok, msg }); setTimeout(() => setToast(null), 4000); };
 
@@ -744,19 +960,20 @@ export default function StoreDashboard() {
       setError('');
       try {
         const settle = url => fetch(url).then(r => r.json()).catch(() => ({ success: false, data: [] }));
-        const [o, d, p, s, prods] = await Promise.all([
+        const [o, d, p, s, prods, dp] = await Promise.all([
           settle(`${BASE}/${storeSlug}/orders`),
           settle(`${BASE}/${storeSlug}/deliveries`),
           settle(`${BASE}/${storeSlug}/payments`),
           settle(`${BASE}/${storeSlug}/stats`),
           settle(`${BASE}/${storeSlug}/products`),
+          settle(`${BASE}/${storeSlug}/delivery-persons`),
         ]);
         if (o.success)     setOrders(o.data);
         if (d.success)     setDeliveries(d.data);
         if (p.success)     setPayments(p.data);
         if (s.success)     setStats(s.data);
         if (prods.success) setProducts(prods.data);
-        // Only show error if the core endpoint (orders) also failed — meaning backend is truly down
+        if (dp.success)    setDeliveryPersons(dp.data);
         if (!o.success && !s.success) {
           setError('Could not connect to backend. Make sure the server is running on port 5000.');
         }
@@ -778,6 +995,25 @@ export default function StoreDashboard() {
     setProducts(prev => [newProduct, ...prev]);
     setShowModal(false);
     showGlobalToast(true, `"${newProduct.name}${newProduct.unit ? ` (${newProduct.unit})` : ''}" added successfully!`);
+  };
+
+  const handleDeliveryPersonSaved = (person) => {
+    setDeliveryPersons(prev => [person, ...prev]);
+    setShowDeliveryModal(false);
+    showGlobalToast(true, `${person.fullName} registered as delivery person for ${meta.name}!`);
+  };
+
+  const handleDeleteDeliveryPerson = async (personId, fullName) => {
+    if (!window.confirm(`Remove "${fullName}" from ${meta.name}?\n\nThis action cannot be undone.`)) return;
+    try {
+      const res  = await fetch(`${BASE}/${storeSlug}/delivery-persons/${personId}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.message || 'Delete failed');
+      setDeliveryPersons(prev => prev.filter(dp => dp._id !== personId));
+      showGlobalToast(true, `${fullName} removed successfully.`);
+    } catch (err) {
+      showGlobalToast(false, `Could not remove: ${err.message}`);
+    }
   };
 
   const filtOrders = orders.filter(o =>
@@ -857,6 +1093,15 @@ export default function StoreDashboard() {
               onMouseEnter={e => e.currentTarget.style.filter='brightness(1.2)'}
               onMouseLeave={e => e.currentTarget.style.filter='none'}>
               📄 Download Full Shop Report PDF
+            </button>
+            {/* Add Delivery Person button */}
+            <button
+              id="add-delivery-person-btn"
+              onClick={() => setShowDeliveryModal(true)}
+              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.7rem 1.4rem', borderRadius: '0.875rem', border: `1px solid ${meta.accent}55`, background: `${meta.accent}14`, color: meta.accent, fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', boxShadow: `0 4px 14px ${meta.accent}20`, transition: 'all 0.2s', whiteSpace: 'nowrap' }}
+              onMouseEnter={e => { e.currentTarget.style.background = `${meta.accent}28`; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = `${meta.accent}14`; e.currentTarget.style.transform = 'none'; }}>
+              🛵 Add Delivery Person
             </button>
             <button
               id="add-product-header-btn"
@@ -964,13 +1209,25 @@ export default function StoreDashboard() {
                   onChange={(k, v) => setDelF(f => ({ ...f, [k]: v }))}
                 />
                 <Table
-                  cols={['Assignment ID', 'Order ID', 'Delivery Person', 'Status', 'Assigned At', 'Actions']}
+                  cols={['Assignment ID', 'Order ID', 'Delivery Person', 'Vehicle', 'Status', 'Assigned At', 'Actions']}
                   empty={delF.id || delF.status ? 'No assignments match the filter.' : 'No delivery assignments found for this store.'}
                   rows={filtDels.map((d) => (
                     <tr key={d._id}>
                       <td style={tdStyle}><code style={{ background: 'rgba(139,92,246,0.1)', color: '#c4b5fd', padding: '0.2rem 0.45rem', borderRadius: '0.375rem', fontSize: '0.75rem' }}>#{shortId(d._id)}</code></td>
                       <td style={tdStyle}><code style={{ background: 'rgba(59,130,246,0.1)', color: '#93c5fd', padding: '0.2rem 0.45rem', borderRadius: '0.375rem', fontSize: '0.75rem' }}>#{shortId(d.orderId)}</code></td>
-                      <td style={tdStyle}>{d.deliveryPersonName}</td>
+                      <td style={tdStyle}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem' }}>
+                          <span style={{ fontWeight: 600 }}>{d.deliveryPersonName}</span>
+                          {d.deliveryPersonPhone && <span style={{ fontSize: '0.72rem', color: MUTED }}>{d.deliveryPersonPhone}</span>}
+                        </div>
+                      </td>
+                      <td style={tdStyle}>
+                        {d.vehicleType ? (
+                          <span style={{ fontSize: '0.78rem', color: '#93c5fd' }}>
+                            {d.vehicleType}{d.vehicleNumber ? ` · ${d.vehicleNumber}` : ''}
+                          </span>
+                        ) : <span style={{ color: MUTED, fontSize: '0.75rem' }}>—</span>}
+                      </td>
                       <td style={tdStyle}>{badge(d.status)}</td>
                       <td style={tdStyle}><span style={{ color: MUTED, fontSize: '0.78rem' }}>{fmtDate(d.assignedAt)}</span></td>
                       <td style={{ ...tdStyle, whiteSpace:'nowrap' }}>
@@ -987,7 +1244,77 @@ export default function StoreDashboard() {
               </Section>
             </div>
 
-            {/* ── 5. Payments Tracking ── */}
+            {/* ── 5. Delivery Persons Roster ── */}
+            <div className="fade-up" style={{ animationDelay: '0.22s' }}>
+              <Section
+                title="Delivery Persons Roster"
+                icon="🛵"
+                action={
+                  <button
+                    onClick={() => setShowDeliveryModal(true)}
+                    style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.5rem 1rem', borderRadius: '0.625rem', border: 'none', background: `linear-gradient(135deg, ${meta.accent}, ${meta.accent}cc)`, color: '#fff', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', boxShadow: `0 4px 14px ${meta.accent}40`, transition: 'filter 0.2s' }}
+                    onMouseEnter={e => e.currentTarget.style.filter = 'brightness(1.15)'}
+                    onMouseLeave={e => e.currentTarget.style.filter = 'none'}>
+                    🛵 Add Delivery Person
+                  </button>
+                }
+              >
+                {deliveryPersons.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '2rem 0' }}>
+                    <p style={{ fontSize: '2.5rem', margin: '0 0 0.75rem' }}>🛵</p>
+                    <p style={{ color: MUTED, fontSize: '0.875rem', marginBottom: '1rem' }}>No delivery persons registered for this store yet.</p>
+                    <button
+                      onClick={() => setShowDeliveryModal(true)}
+                      style={{ padding: '0.6rem 1.5rem', borderRadius: '0.75rem', border: 'none', background: meta.accent, color: '#fff', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer', boxShadow: `0 4px 14px ${meta.accent}40` }}>
+                      🛵 Register First Delivery Person
+                    </button>
+                  </div>
+                ) : (
+                  <Table
+                    cols={['ID', 'Full Name', 'Phone', 'Vehicle Type', 'Vehicle No.', 'Delivery Area', 'Availability', 'Actions']}
+                    empty="No delivery persons found."
+                    rows={deliveryPersons.map(dp => (
+                      <tr key={dp._id}>
+                        <td style={tdStyle}>
+                          <code style={{ background: `${meta.accent}18`, color: meta.accent, padding: '0.2rem 0.45rem', borderRadius: '0.375rem', fontSize: '0.72rem' }}>#{shortId(dp._id)}</code>
+                        </td>
+                        <td style={{ ...tdStyle, fontWeight: 600 }}>{dp.fullName}</td>
+                        <td style={tdStyle}><span style={{ color: MUTED, fontSize: '0.82rem' }}>{dp.phone}</span></td>
+                        <td style={tdStyle}>
+                          <span style={{ fontSize: '0.78rem', background: 'rgba(96,165,250,0.1)', color: '#93c5fd', border: '1px solid rgba(96,165,250,0.25)', borderRadius: '999px', padding: '0.15rem 0.55rem', whiteSpace: 'nowrap' }}>
+                            {dp.vehicleType === 'Motorcycle' ? '🏍️' : dp.vehicleType === 'Bicycle' ? '🚲' : dp.vehicleType === 'Scooter' ? '🛵' : dp.vehicleType === 'Three-Wheeler' ? '🛺' : dp.vehicleType === 'Car' ? '🚗' : dp.vehicleType === 'Van' ? '🚐' : '🚛'} {dp.vehicleType}
+                          </span>
+                        </td>
+                        <td style={tdStyle}><code style={{ fontSize: '0.78rem', color: TEXT, letterSpacing: '0.04em' }}>{dp.vehicleNumber}</code></td>
+                        <td style={{ ...tdStyle, fontSize: '0.82rem', color: MUTED }}>{dp.deliveryArea}</td>
+                        <td style={tdStyle}>
+                          <span style={{
+                            fontSize: '0.72rem', fontWeight: 700, padding: '0.25rem 0.625rem', borderRadius: '999px', whiteSpace: 'nowrap',
+                            background: dp.availability === 'Available' ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.12)',
+                            color:      dp.availability === 'Available' ? '#6ee7b7' : '#fca5a5',
+                            border:     `1px solid ${dp.availability === 'Available' ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)'}`,
+                          }}>
+                            {dp.availability === 'Available' ? '🟢' : '🔴'} {dp.availability}
+                          </span>
+                        </td>
+                        <td style={{ ...tdStyle, whiteSpace: 'nowrap' }}>
+                          <button
+                            onClick={() => handleDeleteDeliveryPerson(dp._id, dp.fullName)}
+                            style={{ padding: '0.28rem 0.65rem', borderRadius: '0.375rem', border: '1px solid rgba(239,68,68,0.35)', background: 'rgba(239,68,68,0.1)', color: '#fca5a5', fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer', transition: 'background 0.18s' }}
+                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(239,68,68,0.24)'}
+                            onMouseLeave={e => e.currentTarget.style.background = 'rgba(239,68,68,0.1)'}
+                          >
+                            🗑 Remove
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  />
+                )}
+              </Section>
+            </div>
+
+            {/* ── 6. Payments Tracking ── */}
             <div className="fade-up" style={{ animationDelay: '0.2s' }}>
               <Section title="Payments Tracking" icon="💳">
                 <FilterBar
@@ -1049,6 +1376,16 @@ export default function StoreDashboard() {
           accent={meta.accent}
           onClose={() => setShowModal(false)}
           onSaved={handleProductSaved}
+        />
+      )}
+      {/* Add Delivery Person Modal */}
+      {showDeliveryModal && (
+        <AddDeliveryPersonModal
+          storeSlug={storeSlug}
+          storeName={meta.name}
+          accent={meta.accent}
+          onClose={() => setShowDeliveryModal(false)}
+          onSaved={handleDeliveryPersonSaved}
         />
       )}
     </div>
