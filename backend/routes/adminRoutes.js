@@ -8,6 +8,9 @@ const {
   updateOrderStatus,
   createProduct,
   getStoreProducts,
+  createDeliveryPerson,
+  getStoreDeliveryPersons,
+  deleteDeliveryPerson,
 } = require('../controllers/adminController');
 
 // GET /api/admin/stores/:storeName/orders
@@ -30,5 +33,14 @@ router.get('/stores/:storeName/products', getStoreProducts);
 
 // POST /api/admin/stores/:storeName/products
 router.post('/stores/:storeName/products', createProduct);
+
+// GET /api/admin/stores/:storeName/delivery-persons
+router.get('/stores/:storeName/delivery-persons', getStoreDeliveryPersons);
+
+// POST /api/admin/stores/:storeName/delivery-persons
+router.post('/stores/:storeName/delivery-persons', createDeliveryPerson);
+
+// DELETE /api/admin/stores/:storeName/delivery-persons/:personId
+router.delete('/stores/:storeName/delivery-persons/:personId', deleteDeliveryPerson);
 
 module.exports = router;
