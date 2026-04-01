@@ -1,6 +1,7 @@
 const Order = require('../models/Order');
 const User = require('../models/User');
 const DeliveryAssignment = require('../models/DeliveryAssignment');
+const DeliveryPerson = require('../models/DeliveryPerson');
 const Payment = require('../models/Payment');
 const Rating = require('../models/Rating');
 
@@ -107,36 +108,48 @@ const assignDelivery = async (req, res) => {
   try {
     const { orderId } = req.body;
 
-    // Find an available delivery person
-    const deliveryPerson = await User.findOne({ role: 'delivery' });
+    const order = await Order.findById(orderId);
+    if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
 
-    if (!deliveryPerson) {
-      // Create a mock delivery person for demo
-      const mockPerson = { _id: '000000000000000000000002', name: 'Kamal Perera' };
-      const assignment = new DeliveryAssignment({
-        order: orderId,
-        deliveryPerson: '000000000000000000000002',
-        deliveryPersonName: 'Kamal Perera',
-      });
-      await assignment.save();
-
-      const order = await Order.findById(orderId);
-      if (order) { order.status = 'Processing'; await order.save(); }
-
-      return res.json({ success: true, data: { deliveryPersonName: 'Kamal Perera', assignment } });
+    // Check if already assigned
+    const existing = await DeliveryAssignment.findOne({ order: orderId });
+    if (existing) {
+      return res.json({ success: true, data: { deliveryPersonName: existing.deliveryPersonName, assignment: existing } });
     }
 
+    // Find an Available delivery person for this store (real persons only — no fallback)
+    const dp = await DeliveryPerson.findOne({
+      storeName:    order.shopName,
+      availability: 'Available',
+    });
+
+    if (!dp) {
+      // No real delivery person available — do not create a fake assignment
+      return res.status(200).json({
+        success: false,
+        assigned: false,
+        message: `No delivery person available for ${order.shopName}. Please try again later.`,
+      });
+    }
+
+    // Mark the delivery person as Busy
+    dp.availability = 'Busy';
+    await dp.save();
+
     const assignment = new DeliveryAssignment({
-      order: orderId,
-      deliveryPerson: deliveryPerson._id,
-      deliveryPersonName: deliveryPerson.name,
+      order:               orderId,
+      deliveryPerson:      dp._id,
+      deliveryPersonName:  dp.fullName,
+      deliveryPersonPhone: dp.phone,
+      vehicleType:         dp.vehicleType,
+      vehicleNumber:       dp.vehicleNumber,
     });
     await assignment.save();
 
-    const order = await Order.findById(orderId);
-    if (order) { order.status = 'Processing'; await order.save(); }
+    order.status = 'Processing';
+    await order.save();
 
-    res.json({ success: true, data: { deliveryPersonName: deliveryPerson.name, assignment } });
+    res.json({ success: true, assigned: true, data: { deliveryPersonName: dp.fullName, assignment } });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -158,7 +171,7 @@ const getOrderTracking = async (req, res) => {
         status: order.status,
         shopName: order.shop ? order.shop.name : order.shopName || '',
         grandTotal: order.grandTotal,
-        deliveryPersonName: assignment ? assignment.deliveryPersonName : 'Being assigned...',
+        deliveryPersonName: assignment ? assignment.deliveryPersonName : 'Waiting for assignment…',
         createdAt: order.createdAt,
       },
     });
@@ -168,40 +181,60 @@ const getOrderTracking = async (req, res) => {
 };
 
 // GET delivery tracking — enriched view for DeliveryTracking page
-// Also auto-assigns a delivery person if none exists
+// Also auto-assigns a delivery person from DeliveryPerson collection if none exists
 const getDeliveryTracking = async (req, res) => {
   try {
     const { orderId } = req.params;
     const order = await Order.findById(orderId);
     if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
 
-    // Auto-assign delivery person if not already assigned
+    // Auto-assign delivery person if not already assigned (real persons only — no fallback)
     let assignment = await DeliveryAssignment.findOne({ order: orderId });
+    let assignmentPending = false;
+
     if (!assignment) {
-      const deliveryPerson = await User.findOne({ role: 'delivery' }).catch(() => null);
-      const personName = deliveryPerson ? deliveryPerson.name : 'Kamal Perera';
-      const personId   = deliveryPerson ? deliveryPerson._id : '000000000000000000000002';
-      assignment = new DeliveryAssignment({
-        order:              orderId,
-        deliveryPerson:     personId,
-        deliveryPersonName: personName,
-      });
-      await assignment.save().catch(() => {});
+      const dp = await DeliveryPerson.findOne({
+        storeName:    order.shopName,
+        availability: 'Available',
+      }).catch(() => null);
+
+      if (dp) {
+        // Mark the person as Busy so they aren't double-assigned
+        dp.availability = 'Busy';
+        await dp.save().catch(() => {});
+
+        assignment = new DeliveryAssignment({
+          order:               orderId,
+          deliveryPerson:      dp._id,
+          deliveryPersonName:  dp.fullName,
+          deliveryPersonPhone: dp.phone,
+          vehicleType:         dp.vehicleType,
+          vehicleNumber:       dp.vehicleNumber,
+        });
+        await assignment.save().catch(() => {});
+      } else {
+        // No real delivery person available — do not create a fake assignment
+        assignmentPending = true;
+      }
     }
 
     res.json({
       success: true,
+      assignmentPending,
       data: {
-        orderId:            order._id,
-        storeName:          order.shopName || 'Campus Shop',
-        deliveryPersonName: assignment.deliveryPersonName || 'Being assigned…',
-        status:             order.status,
-        grandTotal:         order.grandTotal,
-        deliveryAddress:    order.deliveryAddress || '',
-        deliveryArea:       order.deliveryArea    || '',
-        telephone:          order.telephone       || '',
-        createdAt:          order.createdAt,
-        updatedAt:          order.updatedAt || order.createdAt,
+        orderId:             order._id,
+        storeName:           order.shopName || 'Campus Shop',
+        deliveryPersonName:  assignment ? assignment.deliveryPersonName : '',
+        deliveryPersonPhone: assignment ? (assignment.deliveryPersonPhone || '') : '',
+        vehicleType:         assignment ? (assignment.vehicleType  || '') : '',
+        vehicleNumber:       assignment ? (assignment.vehicleNumber || '') : '',
+        status:              order.status,
+        grandTotal:          order.grandTotal,
+        deliveryAddress:     order.deliveryAddress || '',
+        deliveryArea:        order.deliveryArea    || '',
+        telephone:           order.telephone       || '',
+        createdAt:           order.createdAt,
+        updatedAt:           order.updatedAt || order.createdAt,
       },
     });
   } catch (error) {
@@ -219,6 +252,13 @@ const markDelivered = async (req, res) => {
       { new: true }
     );
     if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
+
+    // Free up the delivery person (mark Available again)
+    const assignment = await DeliveryAssignment.findOne({ order: orderId });
+    if (assignment && assignment.deliveryPerson) {
+      await DeliveryPerson.findByIdAndUpdate(assignment.deliveryPerson, { availability: 'Available' }).catch(() => {});
+    }
+
     res.json({ success: true, message: 'Order marked as Delivered', data: { status: order.status } });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

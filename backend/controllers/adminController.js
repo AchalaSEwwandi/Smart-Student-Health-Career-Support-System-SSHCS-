@@ -1,7 +1,8 @@
-const Order = require('../models/Order');
+const Order          = require('../models/Order');
 const DeliveryAssignment = require('../models/DeliveryAssignment');
-const Payment = require('../models/Payment');
-const Product = require('../models/Product');
+const Payment        = require('../models/Payment');
+const Product        = require('../models/Product');
+const DeliveryPerson = require('../models/DeliveryPerson');
 
 /**
  * Normalise the :storeName URL segment to the full shopName string used in the DB.
@@ -44,11 +45,14 @@ const getStoreDeliveries = async (req, res) => {
 
     // Enrich with order id string for display
     const enriched = deliveries.map((d) => ({
-      _id:                d._id,
-      orderId:            d.order,
-      deliveryPersonName: d.deliveryPersonName || 'Unassigned',
-      assignedAt:        d.assignedAt,
-      status:            d.isAvailable ? 'Delivered' : 'In Progress',
+      _id:                 d._id,
+      orderId:             d.order,
+      deliveryPersonName:  d.deliveryPersonName  || 'Unassigned',
+      deliveryPersonPhone: d.deliveryPersonPhone || '',
+      vehicleType:         d.vehicleType         || '',
+      vehicleNumber:       d.vehicleNumber       || '',
+      assignedAt:          d.assignedAt,
+      status:              d.isAvailable ? 'Delivered' : 'In Progress',
     }));
 
     res.json({ success: true, data: enriched });
@@ -191,4 +195,77 @@ const getStoreProducts = async (req, res) => {
   }
 };
 
-module.exports = { getStoreOrders, getStoreDeliveries, getStorePayments, getStoreStats, updateOrderStatus, createProduct, getStoreProducts };
+// POST /api/admin/stores/:storeName/delivery-persons
+const createDeliveryPerson = async (req, res) => {
+  try {
+    const storeName = resolveShopName(req.params.storeName);
+    const { fullName, phone, nic, vehicleType, vehicleNumber, deliveryArea, availability } = req.body;
+
+    if (!fullName  || !fullName.trim())       return res.status(400).json({ success: false, message: 'Full name is required' });
+    if (!phone     || !phone.trim())          return res.status(400).json({ success: false, message: 'Phone number is required' });
+    if (!nic       || !nic.trim())            return res.status(400).json({ success: false, message: 'NIC / ID is required' });
+    if (!vehicleType)                         return res.status(400).json({ success: false, message: 'Vehicle type is required' });
+    if (!vehicleNumber || !vehicleNumber.trim()) return res.status(400).json({ success: false, message: 'Vehicle number is required' });
+    if (!deliveryArea)                        return res.status(400).json({ success: false, message: 'Delivery area is required' });
+
+    const person = await DeliveryPerson.create({
+      storeName,
+      fullName:      fullName.trim(),
+      phone:         phone.trim(),
+      nic:           nic.trim(),
+      vehicleType:   vehicleType.trim(),
+      vehicleNumber: vehicleNumber.trim().toUpperCase(),
+      deliveryArea:  deliveryArea.trim(),
+      availability:  availability || 'Available',
+    });
+
+    res.status(201).json({ success: true, data: person });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// GET /api/admin/stores/:storeName/delivery-persons
+const getStoreDeliveryPersons = async (req, res) => {
+  try {
+    const storeName = resolveShopName(req.params.storeName);
+    const persons   = await DeliveryPerson.find({ storeName }).sort({ createdAt: -1 });
+    res.json({ success: true, data: persons });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// DELETE /api/admin/stores/:storeName/delivery-persons/:personId
+const deleteDeliveryPerson = async (req, res) => {
+  try {
+    const storeName = resolveShopName(req.params.storeName);
+    const { personId } = req.params;
+
+    const person = await DeliveryPerson.findById(personId);
+    if (!person)
+      return res.status(404).json({ success: false, message: 'Delivery person not found' });
+
+    // Safety: only delete if this person belongs to the requesting store
+    if (person.storeName !== storeName)
+      return res.status(403).json({ success: false, message: 'This delivery person does not belong to your store' });
+
+    await DeliveryPerson.findByIdAndDelete(personId);
+    res.json({ success: true, message: 'Delivery person removed successfully' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+module.exports = {
+  getStoreOrders,
+  getStoreDeliveries,
+  getStorePayments,
+  getStoreStats,
+  updateOrderStatus,
+  createProduct,
+  getStoreProducts,
+  createDeliveryPerson,
+  getStoreDeliveryPersons,
+  deleteDeliveryPerson,
+};
