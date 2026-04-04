@@ -1,145 +1,132 @@
-const nodemailer = require('nodemailer');
+import nodemailer from 'nodemailer';
 
-/**
- * Create reusable nodemailer transporter using Gmail SMTP.
- */
-const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST,
-  port: parseInt(process.env.EMAIL_PORT, 10),
-  secure: false,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
+const createTransporter = () => {
+  // For development, use ethereal email or configure SMTP
+  if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+    return nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: Number(process.env.SMTP_PORT) || 587,
+      secure: false,
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+    });
+  }
 
-/**
- * Send OTP password-reset email.
- * @param {Object} options
- * @param {string} options.to
- * @param {string} options.subject
- * @param {string} options.otp
- */
-const sendEmail = async ({ to, subject, otp }) => {
-  const htmlTemplate = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="utf-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    </head>
-    <body style="margin:0; padding:0; background-color:#F9FAFB; font-family:'Inter',Arial,sans-serif;">
-      <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#F9FAFB; padding:40px 0;">
-        <tr>
-          <td align="center">
-            <table width="500" cellpadding="0" cellspacing="0" style="background-color:#ffffff; border-radius:16px; overflow:hidden; box-shadow:0 4px 6px rgba(0,0,0,0.07);">
-              <tr>
-                <td style="background: linear-gradient(135deg, #1E3A8A 0%, #2563EB 100%); padding:32px; text-align:center;">
-                  <h1 style="color:#ffffff; margin:0; font-size:28px; font-weight:700;">🩺 CareMate</h1>
-                  <p style="color:#93C5FD; margin:8px 0 0; font-size:14px;">Smart Student Health &amp; Career Support</p>
-                </td>
-              </tr>
-              <tr>
-                <td style="padding:40px 32px;">
-                  <h2 style="color:#1E3A8A; margin:0 0 16px; font-size:22px;">Password Reset Request</h2>
-                  <p style="color:#4B5563; font-size:15px; line-height:1.6; margin:0 0 24px;">
-                    You have requested to reset your password. Use the following OTP to verify your identity. This code is valid for <strong>10 minutes</strong>.
-                  </p>
-                  <div style="background:#F0FDF4; border:2px solid #10B981; border-radius:12px; padding:24px; text-align:center; margin:0 0 24px;">
-                    <p style="color:#6B7280; font-size:13px; margin:0 0 8px; text-transform:uppercase; letter-spacing:1px;">Your OTP Code</p>
-                    <h1 style="color:#1E3A8A; margin:0; font-size:40px; letter-spacing:8px; font-weight:800;">${otp}</h1>
-                  </div>
-                  <p style="color:#6B7280; font-size:13px; line-height:1.5; margin:0;">
-                    If you did not request a password reset, please ignore this email or contact support.
-                  </p>
-                </td>
-              </tr>
-              <tr>
-                <td style="background-color:#F9FAFB; padding:24px 32px; text-align:center; border-top:1px solid #E5E7EB;">
-                  <p style="color:#9CA3AF; font-size:12px; margin:0;">© ${new Date().getFullYear()} CareMate (SSHCS). All rights reserved.</p>
-                  <p style="color:#9CA3AF; font-size:12px; margin:8px 0 0;">This is an automated email. Please do not reply.</p>
-                </td>
-              </tr>
-            </table>
-          </td>
-        </tr>
-      </table>
-    </body>
-    </html>
+  // Fallback: console log in development
+  return nodemailer.createTransport({
+    streamTransport: true,
+    buffer: true,
+  });
+};
+
+const sendEmail = async (options) => {
+  try {
+    const transporter = createTransporter();
+
+    const message = {
+      from: `${process.env.SMTP_USER || 'SSHCS'} <${process.env.SMTP_USER || 'noreply@sshcs.com'}>`,
+      to: options.to,
+      subject: options.subject,
+      text: options.text,
+      html: options.html,
+    };
+
+    // Send email or log to console in dev mode
+    if (process.env.NODE_ENV === 'development' && !process.env.SMTP_HOST) {
+      console.log('📧 Email would be sent:', message);
+      return { success: true, messageId: 'dev-mode-mock' };
+    }
+
+    const info = await transporter.sendMail(message);
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    console.error('Email send error:', error);
+    throw error;
+  }
+};
+
+// Specific email templates
+const sendApprovalEmail = async ({ to, name }) => {
+  const subject = 'SSHCS - Your Account Has Been Approved!';
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #0ea5e9;">Account Approved</h2>
+      <p>Dear ${name},</p>
+      <p>Great news! Your account has been approved by the administrator.</p>
+      <p>You can now log in and access your dashboard.</p>
+      <p><a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/login"
+            style="background: #0ea5e9; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+          Go to Login
+        </a>
+      </p>
+      <p>Best regards,<br>SSHCS Team</p>
+    </div>
   `;
 
-  await transporter.sendMail({
-    from: `"CareMate (SSHCS)" <${process.env.EMAIL_USER}>`,
+  return sendEmail({
     to,
     subject,
-    html: htmlTemplate,
+    html,
   });
 };
 
-/**
- * Send account-approved notification email.
- * @param {Object} options
- * @param {string} options.to
- * @param {string} options.name
- */
-const sendApprovalEmail = async ({ to, name }) => {
-  const htmlTemplate = `
-    <!DOCTYPE html>
-    <html>
-    <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-    <body style="margin:0; padding:0; background-color:#F9FAFB; font-family:'Inter',Arial,sans-serif;">
-      <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#F9FAFB; padding:40px 0;">
-        <tr>
-          <td align="center">
-            <table width="500" cellpadding="0" cellspacing="0" style="background-color:#ffffff; border-radius:16px; overflow:hidden; box-shadow:0 4px 6px rgba(0,0,0,0.07);">
-              <tr>
-                <td style="background: linear-gradient(135deg, #065F46 0%, #10B981 100%); padding:32px; text-align:center;">
-                  <h1 style="color:#ffffff; margin:0; font-size:28px; font-weight:700;">🩺 CareMate</h1>
-                  <p style="color:#A7F3D0; margin:8px 0 0; font-size:14px;">Smart Student Health &amp; Career Support</p>
-                </td>
-              </tr>
-              <tr>
-                <td style="padding:40px 32px;">
-                  <div style="text-align:center; margin-bottom:24px;">
-                    <span style="display:inline-block; background:#ECFDF5; border-radius:50%; width:64px; height:64px; line-height:64px; font-size:32px;">✅</span>
-                  </div>
-                  <h2 style="color:#065F46; margin:0 0 16px; font-size:22px; text-align:center;">Account Approved!</h2>
-                  <p style="color:#4B5563; font-size:15px; line-height:1.6; margin:0 0 24px;">
-                    Hi <strong>${name}</strong>,<br><br>
-                    Great news! Your CareMate account has been <strong>approved</strong> by our admin team. 
-                    You can now log in and access all features.
-                  </p>
-                  <div style="text-align:center; margin:24px 0;">
-                    <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/login"
-                       style="display:inline-block; background:linear-gradient(135deg,#065F46,#10B981); color:#fff; text-decoration:none; padding:14px 36px; border-radius:10px; font-size:15px; font-weight:600;">
-                      Log In to CareMate
-                    </a>
-                  </div>
-                  <p style="color:#6B7280; font-size:13px; line-height:1.5; margin:0;">
-                    If you have any questions, feel free to reach out to our support team.
-                  </p>
-                </td>
-              </tr>
-              <tr>
-                <td style="background-color:#F9FAFB; padding:24px 32px; text-align:center; border-top:1px solid #E5E7EB;">
-                  <p style="color:#9CA3AF; font-size:12px; margin:0;">© ${new Date().getFullYear()} CareMate (SSHCS). All rights reserved.</p>
-                </td>
-              </tr>
-            </table>
-          </td>
-        </tr>
-      </table>
-    </body>
-    </html>
+const sendContactReplyEmail = async ({ to, name, messageSubject, replyText }) => {
+  const subject = `SSHCS - Re: ${messageSubject}`;
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #0ea5e9;">Admin Reply</h2>
+      <p>Dear ${name},</p>
+      <p>We have replied to your inquiry:</p>
+      <blockquote style="background: #f5f5f5; padding: 15px; border-left: 3px solid #0ea5e9; margin: 20px 0;">
+        ${replyText}
+      </blockquote>
+      <p>If you have further questions, feel free to contact us.</p>
+      <p>Best regards,<br>SSHCS Team</p>
+    </div>
   `;
 
-  await transporter.sendMail({
-    from: `"CareMate (SSHCS)" <${process.env.EMAIL_USER}>`,
+  return sendEmail({
     to,
-    subject: 'CareMate — Your Account Has Been Approved! 🎉',
-    html: htmlTemplate,
+    subject,
+    html,
   });
 };
 
-module.exports = sendEmail;
-module.exports.sendApprovalEmail = sendApprovalEmail;
+const sendMessageReplyEmail = async ({ to, studentName, vendorName, subject, originalMessage, reply }) => {
+  const emailSubject = `SSHCS - Reply from ${vendorName}: ${subject}`;
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #0ea5e9;">New Message Reply</h2>
+      <p>Dear ${studentName},</p>
+      <p><strong>${vendorName}</strong> has replied to your message:</p>
+
+      <div style="background: #f5f5f5; padding: 15px; margin: 10px 0; border-radius: 5px;">
+        <h4 style="margin: 0 0 10px 0; color: #666;">Your Message:</h4>
+        <p style="margin: 0; white-space: pre-wrap;">${originalMessage}</p>
+      </div>
+
+      <div style="background: #e0f2fe; padding: 15px; margin: 10px 0; border-radius: 5px;">
+        <h4 style="margin: 0 0 10px 0; color: #0ea5e9;">Reply:</h4>
+        <p style="margin: 0; white-space: pre-wrap;">${reply}</p>
+      </div>
+
+      <p>Log in to continue the conversation.</p>
+      <p>Best regards,<br>SSHCS Team</p>
+    </div>
+  `;
+
+  return sendEmail({
+    to,
+    subject: emailSubject,
+    html,
+  });
+};
+
+export {
+  sendEmail,
+  sendApprovalEmail,
+  sendContactReplyEmail,
+  sendMessageReplyEmail,
+};

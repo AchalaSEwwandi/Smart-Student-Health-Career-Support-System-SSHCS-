@@ -1,4 +1,4 @@
-const jwt = require('jsonwebtoken');
+import jwt from 'jsonwebtoken';
 
 /**
  * Middleware to verify JWT Bearer token from Authorization header.
@@ -9,6 +9,7 @@ const verifyToken = (req, res, next) => {
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.log("verifyToken Failed - No Header");
       return res.status(401).json({
         success: false,
         message: 'Access denied. No token provided.',
@@ -21,6 +22,7 @@ const verifyToken = (req, res, next) => {
     req.user = decoded; // { id, role, iat, exp }
     next();
   } catch (error) {
+    console.error("verifyToken Error:", error.name, error.message);
     if (error.name === 'TokenExpiredError') {
       return res.status(401).json({
         success: false,
@@ -34,4 +36,4 @@ const verifyToken = (req, res, next) => {
   }
 };
 
-module.exports = verifyToken;
+export default verifyToken;

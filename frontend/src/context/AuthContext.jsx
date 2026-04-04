@@ -1,121 +1,86 @@
-import { createContext, useState, useEffect, useCallback } from 'react';
-import api from '../services/api';
+import { createContext, useContext, useState, useEffect } from 'react';
+import { authService } from '../services';
 
-export const AuthContext = createContext(null);
-
-const ROLE_REDIRECTS = {
-  student:         '/',
-  doctor:          '/doctor/dashboard',
-  shop_owner:      '/shop/dashboard',
-  delivery_person: '/delivery/dashboard',
-  admin:           '/admin/dashboard',
-};
-
-const getRedirectPath = (userData) => {
-  if (userData?.role === 'shop_owner') {
-    if (userData.businessType === 'grocery') return '/grocery/dashboard';
-    if (userData.businessType === 'pharmacy') return '/pharmacy/dashboard';
-  }
-  return ROLE_REDIRECTS[userData?.role] || '/';
-};
+const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser]       = useState(null);
-  const [token, setToken]     = useState(localStorage.getItem('accessToken'));
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const isAuthenticated = !!token && !!user;
-  const role            = user?.role   || null;
-  const status          = user?.status || null;
-
-  // Restore session on mount
   useEffect(() => {
-    const savedToken = localStorage.getItem('accessToken');
-    const savedUser  = localStorage.getItem('authUser');
-    if (savedToken && savedUser) {
-      setToken(savedToken);
-      setUser(JSON.parse(savedUser));
-    }
-    setLoading(false);
+    checkAuth();
   }, []);
 
-  /**
-   * Login — store tokens and user.
-   * @returns {{ redirectPath: string, user: object }}
-   */
-  const login = useCallback(async (email, password) => {
-    const { data } = await api.post('/auth/login', { email, password });
-    const { accessToken, user: userData } = data.data;
-
-    localStorage.setItem('accessToken', accessToken);
-    localStorage.setItem('authUser', JSON.stringify(userData));
-    setToken(accessToken);
-    setUser(userData);
-
-    return {
-      redirectPath: getRedirectPath(userData),
-      user: userData,
-    };
-  }, []);
-
-  /**
-   * Register — supports both plain JSON (student) and FormData (doctor/vendor).
-   * @param {object|FormData} formData
-   * @returns {{ pending: boolean, redirectPath?: string }}
-   */
-  const register = useCallback(async (formData) => {
-    const isFormData = formData instanceof FormData;
-
-    const { data } = await api.post('/auth/register', formData, {
-      headers: isFormData ? { 'Content-Type': 'multipart/form-data' } : {},
-    });
-
-    // Pending user (doctor/vendor) — no tokens issued by backend
-    if (data.pending) {
-      return { pending: true };
-    }
-
-    const { accessToken, user: userData } = data.data;
-    localStorage.setItem('accessToken', accessToken);
-    localStorage.setItem('authUser', JSON.stringify(userData));
-    setToken(accessToken);
-    setUser(userData);
-
-    return {
-      pending: false,
-      redirectPath: getRedirectPath(userData),
-    };
-  }, []);
-
-  /**
-   * Logout — clear tokens and redirect to login.
-   */
-  const logout = useCallback(async () => {
+  const checkAuth = async () => {
     try {
-      await api.post('/auth/logout');
-    } catch {
-      // best-effort
-    } finally {
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+
+      // In a real app, you'd fetch user profile here
+      // For now, we'll decode the token or fetch from /api/auth/me
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      setUser({
+        id: payload.id,
+        _id: payload.id,
+        role: payload.role,
+        name: localStorage.getItem('userName') || '',
+      });
+    } catch (error) {
+      console.error('Auth check failed:', error);
       localStorage.removeItem('accessToken');
-      localStorage.removeItem('authUser');
-      setToken(null);
       setUser(null);
+    } finally {
+      setLoading(false);
     }
-  }, []);
+  };
 
-  /**
-   * Update user in context (e.g. after profile update).
-   */
-  const updateUser = useCallback((updatedUser) => {
-    setUser(updatedUser);
-    localStorage.setItem('authUser', JSON.stringify(updatedUser));
-  }, []);
+  const login = async (email, password) => {
+    const data = await authService.login({ email, password });
+    setUser(data.data.user);
+    if(data.data.user?.name) localStorage.setItem('userName', data.data.user.name);
+    return data;
+  };
 
-  return (
-    <AuthContext.Provider
-      value={{ user, token, role, status, isAuthenticated, loading, login, register, logout, updateUser, ROLE_REDIRECTS }}
-    >
-      {children}
-    </AuthContext.Provider>
-  );
+  const register = async (userData) => {
+    const data = await authService.register(userData);
+    if (!data.pending) {
+      setUser(data.data.user);
+      if(data.data.user?.name) localStorage.setItem('userName', data.data.user.name);
+    }
+    return data;
+  };
+
+  const logout = async () => {
+    await authService.logout();
+    localStorage.removeItem('userName');
+    setUser(null);
+  };
+
+  const value = {
+    user,
+    loading,
+    login,
+    register,
+    logout,
+    isAuthenticated: !!user,
+    isAdmin: user?.role === 'admin',
+    isDoctor: user?.role === 'doctor',
+    isStudent: user?.role === 'student',
+    isVendor: user?.role === 'shop_owner',
+    isDelivery: user?.role === 'delivery_person',
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 };

@@ -1,40 +1,44 @@
-const jwt = require('jsonwebtoken');
-const User = require('../models/User');
-const OTP = require('../models/OTP');
-const generateOTP = require('../utils/generateOTP');
-const sendEmail = require('../utils/sendEmail');
+import jwt from 'jsonwebtoken';
+import User from '../models/User.js';
+import OTP from '../models/OTP.js';
+import { generateOTP, sendEmail } from '../utils/index.js';
 
-/**
- * Generate JWT access token (15 min).
- */
 const generateAccessToken = (id, role) =>
   jwt.sign({ id, role }, process.env.JWT_SECRET, { expiresIn: '15m' });
 
-/**
- * Generate JWT refresh token (7 days).
- */
 const generateRefreshToken = (id) =>
   jwt.sign({ id }, process.env.JWT_REFRESH_SECRET, { expiresIn: '7d' });
 
 /**
  * POST /api/auth/register
- * Supports: student, doctor, shop_owner
- * Students → status: 'approved'  (auto)
- * Doctors & Vendors → status: 'pending' (awaits admin approval)
  */
-const register = async (req, res, next) => {
+export const register = async (req, res, next) => {
   try {
     const {
-      name, email, password, phone, role,
+      name,
+      email,
+      password,
+      phone,
+      role,
       // student fields
-      studentId, year, semester, faculty,
+      studentId,
+      year,
+      semester,
+      faculty,
       // doctor fields
-      nic, medicalRegNumber, specialization, yearsOfExperience, hospitalName,
+      nic,
+      medicalRegNumber,
+      specialization,
+      yearsOfExperience,
+      hospitalName,
+      medicalLicenseFile,
       // vendor fields
-      shopName, businessType, shopAddress,
+      shopName,
+      businessType,
+      shopAddress,
+      businessLicenseFile,
     } = req.body;
 
-    // Allowed self-registration roles
     const allowedRoles = ['student', 'doctor', 'shop_owner'];
     const chosenRole = allowedRoles.includes(role) ? role : 'student';
 
@@ -43,7 +47,7 @@ const register = async (req, res, next) => {
       return res.status(409).json({ success: false, message: 'Email already in use.' });
     }
 
-    // Auto-set status
+    // Auto-set status: students auto-approved, others pending
     const status = chosenRole === 'student' ? 'approved' : 'pending';
 
     // Build user data
@@ -76,7 +80,7 @@ const register = async (req, res, next) => {
 
     const user = await User.create(userData);
 
-    // For pending users: return without tokens (they cannot access the app yet)
+    // Pending users: return without tokens
     if (status === 'pending') {
       return res.status(201).json({
         success: true,
@@ -94,7 +98,7 @@ const register = async (req, res, next) => {
       });
     }
 
-    // For approved (student): issue tokens immediately
+    // Approved users: issue tokens
     const accessToken = generateAccessToken(user._id, user.role);
     const refreshToken = generateRefreshToken(user._id);
     user.refreshToken = refreshToken;
@@ -131,9 +135,8 @@ const register = async (req, res, next) => {
 
 /**
  * POST /api/auth/login
- * Authenticate user. Returns status field for pending banner.
  */
-const login = async (req, res, next) => {
+export const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
@@ -173,7 +176,7 @@ const login = async (req, res, next) => {
           name: user.name,
           email: user.email,
           role: user.role,
-          status: user.status,   // ← NEW: allows frontend to show pending banner
+          status: user.status,
           avatar: user.avatar,
           isActive: user.isActive,
         },
@@ -187,7 +190,7 @@ const login = async (req, res, next) => {
 /**
  * POST /api/auth/logout
  */
-const logout = async (req, res, next) => {
+export const logout = async (req, res, next) => {
   try {
     const { refreshToken } = req.cookies;
     if (refreshToken) {
@@ -203,7 +206,7 @@ const logout = async (req, res, next) => {
 /**
  * POST /api/auth/refresh-token
  */
-const refreshToken = async (req, res, next) => {
+export const refreshToken = async (req, res, next) => {
   try {
     const token = req.cookies.refreshToken;
     if (!token) {
@@ -227,7 +230,7 @@ const refreshToken = async (req, res, next) => {
 /**
  * POST /api/auth/forgot-password
  */
-const forgotPassword = async (req, res, next) => {
+export const forgotPassword = async (req, res, next) => {
   try {
     const { email } = req.body;
 
@@ -242,10 +245,21 @@ const forgotPassword = async (req, res, next) => {
     await OTP.deleteMany({ email });
     await OTP.create({ email, otp, expiresAt });
 
+    // Send email
     await sendEmail({
       to: email,
-      subject: 'CareMate — Password Reset OTP',
-      otp,
+      subject: 'SSHCS - Password Reset OTP',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #0ea5e9;">Password Reset</h2>
+          <p>You requested a password reset. Use the following OTP:</p>
+          <div style="background: #f5f5f5; padding: 20px; text-align: center; font-size: 24px; letter-spacing: 5px; margin: 20px 0;">
+            <strong>${otp}</strong>
+          </div>
+          <p>This OTP expires in 10 minutes.</p>
+          <p>If you didn't request this, please ignore this email.</p>
+        </div>
+      `,
     });
 
     res.json({ success: true, message: 'OTP sent to your email.' });
@@ -257,7 +271,7 @@ const forgotPassword = async (req, res, next) => {
 /**
  * POST /api/auth/verify-otp
  */
-const verifyOTP = async (req, res, next) => {
+export const verifyOTP = async (req, res, next) => {
   try {
     const { email, otp } = req.body;
 
@@ -285,7 +299,7 @@ const verifyOTP = async (req, res, next) => {
 /**
  * POST /api/auth/reset-password
  */
-const resetPassword = async (req, res, next) => {
+export const resetPassword = async (req, res, next) => {
   try {
     const { resetToken, newPassword } = req.body;
 
@@ -311,5 +325,27 @@ const resetPassword = async (req, res, next) => {
     next(error);
   }
 };
-
-module.exports = { register, login, logout, refreshToken, forgotPassword, verifyOTP, resetPassword };
+export const getProfile = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user.id).select('-password');
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    res.json({ success: true, data: user });
+  } catch (error) { next(error); }
+};
+export const updateProfile = async (req, res, next) => {
+  try {
+    const updates = { ...req.body };
+    delete updates.password; // Do not allow password update here
+    delete updates.role;     // Role shouldn't be updated here
+    delete updates.status;   // Approval shouldn't be updated here
+    const user = await User.findByIdAndUpdate(req.user.id, updates, { new: true, runValidators: true }).select('-password');
+    res.json({ success: true, data: user });
+  } catch (error) { next(error); }
+};
+export const deleteProfile = async (req, res, next) => {
+  try {
+    await User.findByIdAndDelete(req.user.id);
+    res.clearCookie('refreshToken');
+    res.json({ success: true, message: 'Account deleted successfully' });
+  } catch (error) { next(error); }
+};

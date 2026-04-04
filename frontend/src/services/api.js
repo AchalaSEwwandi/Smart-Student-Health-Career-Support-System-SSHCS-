@@ -1,42 +1,54 @@
 import axios from 'axios';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
 const api = axios.create({
-  baseURL: 'http://localhost:5001/api',
-  withCredentials: true, // send httpOnly cookies
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  withCredentials: true, // For refresh token cookies
 });
 
-// Request interceptor — attach access token
+// Request interceptor to add auth token
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('accessToken');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    const accessToken = localStorage.getItem('accessToken');
+    if (accessToken) {
+      config.headers.Authorization = `Bearer ${accessToken}`;
     }
     return config;
   },
   (error) => Promise.reject(error)
 );
 
-// Response interceptor — handle 401 by refreshing token
+// Response interceptor to handle token refresh
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (error.response?.status === 401 && !originalRequest._retry && error.response?.data?.message?.includes('expired')) {
       originalRequest._retry = true;
 
       try {
-        const { data } = await axios.post(
-          'http://localhost:5001/api/auth/refresh-token',
-          {},
-          { withCredentials: true }
-        );
-        const newToken = data.data.accessToken;
-        localStorage.setItem('accessToken', newToken);
-        originalRequest.headers.Authorization = `Bearer ${newToken}`;
-        return api(originalRequest);
-      } catch {
+        const refreshToken = document.cookie
+          .split('; ')
+          .find((row) => row.startsWith('refreshToken='))
+          ?.split('=')[1];
+
+        if (refreshToken) {
+          const response = await axios.post(`${API_BASE_URL}/auth/refresh-token`, {}, { withCredentials: true });
+          const { accessToken } = response.data.data;
+
+          localStorage.setItem('accessToken', accessToken);
+          api.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
+          originalRequest.headers['Authorization'] = `Bearer ${accessToken}`;
+
+          return api(originalRequest);
+        }
+      } catch (refreshError) {
+        console.error('Refresh token failed:', refreshError);
         localStorage.removeItem('accessToken');
         window.location.href = '/login';
       }

@@ -15,4 +15,4 @@ const allowRoles = (...roles) => {
   };
 };
 
-module.exports = allowRoles;
+export default allowRoles;

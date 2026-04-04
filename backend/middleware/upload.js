@@ -1,9 +1,9 @@
-const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
 
 // Ensure upload directory exists
-const uploadDir = path.join(__dirname, '..', 'uploads', 'licenses');
+const uploadDir = path.join(process.cwd(), 'uploads');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
@@ -17,10 +17,11 @@ const storage = multer.diskStorage({
 });
 
 const fileFilter = (_req, file, cb) => {
-  if (file.mimetype === 'application/pdf') {
+  // Allow images and PDFs
+  if (file.mimetype === 'application/pdf' || file.mimetype.startsWith('image/')) {
     cb(null, true);
   } else {
-    cb(new Error('Only PDF files are allowed'), false);
+    cb(new Error('Only PDF and image files are allowed'), false);
   }
 };
 
@@ -30,4 +31,4 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
 });
 
-module.exports = upload;
+export default upload;

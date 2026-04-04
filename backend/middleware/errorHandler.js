@@ -1,24 +1,55 @@
-/**
- * Global error handler middleware.
- * Returns { success: false, message, stack (dev only) }.
- */
+import multer from 'multer';
+
 const errorHandler = (err, req, res, next) => {
-  console.error('Error:', err.message);
+  console.error('Error:', err);
 
-  const statusCode = err.statusCode || 500;
-  const message = err.message || 'Internal Server Error';
-
-  const response = {
-    success: false,
-    message,
-  };
-
-  // Include stack trace only in development
-  if (process.env.NODE_ENV === 'development') {
-    response.stack = err.stack;
+  // Multer error
+  if (err instanceof multer.MulterError) {
+    return res.status(400).json({
+      success: false,
+      message: err.message,
+    });
   }
 
-  res.status(statusCode).json(response);
+  // Validation error
+  if (err.name === 'ValidationError') {
+    const messages = Object.values(err.errors).map((e) => e.message);
+    return res.status(400).json({
+      success: false,
+      message: messages.join(', '),
+    });
+  }
+
+  // Mongoose duplicate key error
+  if (err.code === 11000) {
+    return res.status(400).json({
+      success: false,
+      message: 'Duplicate field value entered',
+    });
+  }
+
+  // JWT errors
+  if (err.name === 'JsonWebTokenError') {
+    return res.status(401).json({
+      success: false,
+      message: 'Invalid token',
+    });
+  }
+
+  if (err.name === 'TokenExpiredError') {
+    return res.status(401).json({
+      success: false,
+      message: 'Token expired',
+    });
+  }
+
+  // Default error
+  const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
+  res.status(statusCode).json({
+    success: false,
+    message: err.message || 'Server Error',
+    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
+  });
 };
 
-module.exports = errorHandler;
+export default errorHandler;
