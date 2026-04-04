@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import express from 'express';
 import upload from '../middleware/upload.js';
 import {
@@ -24,3 +25,16 @@ router.put('/products/:productId', upload.single('image'), updateProduct);
 router.delete('/products/:productId',  deleteProduct);
 
 export default router;
+=======
+const express = require('express');
+const router = express.Router();
+const { getShops, getProductsByShop } = require('../controllers/shopController');
+
+// GET /api/shops
+router.get('/', getShops);
+
+// GET /api/shops/:shopId/products
+router.get('/:shopId/products', getProductsByShop);
+
+module.exports = router;
+>>>>>>> 056594cc1b189653b6d1357f4be5300dff768d62

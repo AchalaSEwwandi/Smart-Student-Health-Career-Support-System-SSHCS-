@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Navbar from './components/layout/Navbar';
@@ -252,3 +253,74 @@ function App() {
 
 export default App;
 
+=======
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import Navbar from './components/Navbar';
+import HeroSection from './components/HeroSection';
+import ServicesSection from './components/ServicesSection';
+import GrocerySection from './components/GrocerySection';
+import FeaturesSection from './components/FeaturesSection';
+import HowItWorksSection from './components/HowItWorksSection';
+import CTASection from './components/CTASection';
+import Footer from './components/Footer';
+
+// Delivery pages
+import DeliveryDashboard from './pages/delivery/DeliveryDashboard';
+import ShopSelection from './pages/delivery/ShopSelection';
+import ProductListing from './pages/delivery/ProductListing';
+import CartPage from './pages/delivery/CartPage';
+import PaymentPage from './pages/delivery/PaymentPage';
+import DeliveryAddressPage from './pages/delivery/DeliveryAddressPage';
+import OrderTracking from './pages/delivery/OrderTracking';
+import DeliveryTracking from './pages/delivery/DeliveryTracking';
+import DeliveryConfirmation from './pages/delivery/DeliveryConfirmation';
+import RatingPage from './pages/delivery/RatingPage';
+import OrderHistory from './pages/delivery/OrderHistory';
+
+// Admin pages
+import AdminStoresDashboard from './pages/delivery/AdminStoresDashboard';
+import StoreDashboard from './pages/delivery/StoreDashboard';
+
+// Home Page component
+function HomePage() {
+  return (
+    <div className="min-h-screen bg-white">
+      <Navbar />
+      <HeroSection />
+      <ServicesSection />
+      <GrocerySection />
+      <FeaturesSection />
+      <HowItWorksSection />
+      <CTASection />
+      <Footer />
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/delivery" element={<DeliveryDashboard />} />
+        <Route path="/delivery/shops" element={<ShopSelection />} />
+        <Route path="/delivery/products/:shopId" element={<ProductListing />} />
+        <Route path="/delivery/cart" element={<CartPage />} />
+        <Route path="/delivery/payment/:orderId" element={<PaymentPage />} />
+        <Route path="/delivery/address/:orderId" element={<DeliveryAddressPage />} />
+        <Route path="/delivery/tracking/:orderId" element={<OrderTracking />} />
+        <Route path="/delivery/delivery-tracking/:orderId" element={<DeliveryTracking />} />
+        <Route path="/delivery/live-tracking/:orderId"     element={<DeliveryTracking />} />
+        <Route path="/delivery/confirmation/:orderId" element={<DeliveryConfirmation />} />
+        <Route path="/delivery/rating/:orderId" element={<RatingPage />} />
+        <Route path="/delivery/history" element={<OrderHistory />} />
+        {/* Admin routes */}
+        <Route path="/admin/delivery/stores" element={<AdminStoresDashboard />} />
+        <Route path="/admin/delivery/stores/:storeSlug" element={<StoreDashboard />} />
+      </Routes>
+    </BrowserRouter>
+  );
+}
+
+export default App;
+>>>>>>> 056594cc1b189653b6d1357f4be5300dff768d62

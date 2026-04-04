@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 
@@ -15,6 +16,22 @@ const connectDB = async () => {
     console.log('   Make sure MongoDB is running and MONGODB_URI is correct');
     process.exit(1);
   }
+=======
+const mongoose = require('mongoose');
+
+const connectDB = async () => {
+  const tryConnect = async () => {
+    try {
+      const conn = await mongoose.connect(process.env.MONGO_URI);
+      console.log(`MongoDB Connected: ${conn.connection.host}`);
+    } catch (error) {
+      console.error(`MongoDB Connection Error: ${error.message}`);
+      console.log('Retrying MongoDB connection in 5 seconds...');
+      setTimeout(tryConnect, 5000);
+    }
+  };
+  await tryConnect();
+>>>>>>> 056594cc1b189653b6d1357f4be5300dff768d62
 };
 
 export default connectDB;
